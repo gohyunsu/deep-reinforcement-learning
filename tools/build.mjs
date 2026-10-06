@@ -118,8 +118,8 @@ function writeIndex() {
     '<div class="overview-card-top"><span>' + assignment.id.toUpperCase() + '</span><span>과제 가이드</span></div>' +
     '<h3>' + escapeHtml(assignment.title) + '</h3><p>' + escapeHtml(assignment.short) + '</p>' +
     '<div class="card-arrow">과제 살펴보기 <span>↗</span></div></a>').join('');
-  const body = '<main class="home-main"><section class="home-hero"><div class="eyebrow">SLIDE-BY-SLIDE STUDY GUIDE</div>' +
-    '<h1>Deep<br><em>Reinforcement Learning</em></h1>' +
+  const body = '<main class="home-main"><section class="home-hero"><div class="eyebrow">' + title + '</div>' +
+    '<h1>상태와 행동에서<br><em>정책 학습의 직관</em>까지</h1>' +
     '<p>순차 의사결정의 기초에서 모방학습, 정책경사, Q-learning, 오프라인 강화학습까지. 슬라이드 한 장씩 원리와 수식을 따라가며 실제 연구 사례로 연결한다.</p>' +
     '<div class="hero-actions"><a class="primary-button" href="lecture/01-1.html">처음부터 읽기 <span>→</span></a>' +
     '<a class="pdf-link" href="study-guide.pdf" download>PDF 내려받기 ↓</a>' +
