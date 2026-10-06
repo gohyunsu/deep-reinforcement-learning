@@ -225,7 +225,7 @@ ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 �
 \subsubsection{슬라이드 50 · Next class}
 이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
 \section{02-1 · MDP와 순차적 의사결정}
-Markov decision process(MDP)는 강화학습 문제를 $(\mathcal S,\mathcal A,P,r,\gamma,ho_0)$로 표현한다. 상태 $s$와 행동 $a$, 전이확률 $P(s'\mid s,a)$, 보상 $r(s,a)$, 할인율 $\gamma$, 초기 상태 분포 $ho_0$가 환경과 목표를 정의한다. 정책 $\pi(a\mid s)$는 에이전트의 행동 규칙이다. MDP의 Markov 가정은 현재 상태를 알면 미래가 과거 전체에 추가로 의존하지 않는다는 조건이다. 관측만으로 충분한 상태를 만들지 못하면 관측 기반 정책이나 belief state가 필요하다.\par
+Markov decision process(MDP)는 강화학습 문제를 $(\mathcal S,\mathcal A,P,r,\gamma,\rho_0)$로 표현한다. 상태 $s$와 행동 $a$, 전이확률 $P(s'\mid s,a)$, 보상 $r(s,a)$, 할인율 $\gamma$, 초기 상태 분포 $\rho_0$가 환경과 목표를 정의한다. 정책 $\pi(a\mid s)$는 에이전트의 행동 규칙이다. MDP의 Markov 가정은 현재 상태를 알면 미래가 과거 전체에 추가로 의존하지 않는다는 조건이다. 관측만으로 충분한 상태를 만들지 못하면 관측 기반 정책이나 belief state가 필요하다.\par
 \par\medskip
 보상의 합을 최적화한다고 해서 매 시점의 보상을 탐욕적으로 고르면 되는 것은 아니다. 현재 행동은 전이확률을 바꾸어 미래 보상의 분포까지 바꾸므로 기대 누적 보상을 비교해야 한다. 유한 지평에서는 종료 시점까지 합하고, 무한 지평에서는 할인합 $G_t=\sum_{k=0}^{\infty}\gamma^k r_{t+k}$를 자주 쓴다. $\gamma$가 1에 가까울수록 먼 미래를 더 중시하지만 추정 난도와 분산도 커진다.\par
 \par\medskip
@@ -341,10 +341,7 @@ Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미
 \textbf{로그미분 트릭의 유도.} 분포가 매개변수에 의존하는 기대값을 적분으로 쓰면\par
 \par\medskip
 \begin{equation*}
-
-abla_\theta J=
-abla_\theta\int p_\theta(\tau)R(\tau)d\tau=\int p_\theta(\tau)
-abla_\theta\log p_\theta(\tau)R(\tau)d\tau.
+\nabla_\theta J=\nabla_\theta\int p_\theta(\tau)R(\tau)d\tau=\int p_\theta(\tau)\nabla_\theta\log p_\theta(\tau)R(\tau)d\tau.
 
 \end{equation*}
 \par\medskip
@@ -412,9 +409,7 @@ gradient estimator가 unbiased여도 한 업데이트의 방향은 매우 noisy�
 \par\medskip
 \begin{equation*}
 
-
-abla_\theta J=\mathbb E_{s,a\sim\pi_\theta}[
-abla_\theta\log\pi_\theta(a\mid s)Q^\pi(s,a)].
+\nabla_\theta J=\mathbb E_{s,a\sim\pi_\theta}[\nabla_\theta\log\pi_\theta(a\mid s)Q^\pi(s,a)].
 
 \end{equation*}
 \par\medskip
@@ -706,10 +701,7 @@ Rainbow는 Double DQN, multi-step, prioritized replay, dueling, distributional l
 \subsubsection{슬라이드 42 · Next class}
 이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
 \section{05-1 · 연속 제어: DDPG, TD3, SAC}
-연속 행동 공간에서는 매 상태에서 $\arg\max_aQ(s,a)$를 격자 탐색할 수 없다. DDPG는 actor $\mu_\theta(s)$가 행동을 제안하고 critic $Q_\phi(s,a)$가 평가하도록 해, chain rule로 \textbackslash{}(\par
-abla\_\textbackslash{}theta J\textbackslash{}approx\textbackslash{}mathbb E[\par
-abla\_aQ\_\textbackslash{}phi(s,a)|\_\{a=\textbackslash{}mu(s)\}\par
-abla\_\textbackslash{}theta\textbackslash{}mu\_\textbackslash{}theta(s)]\textbackslash{})를 계산한다. replay buffer와 target actor/critic을 사용하는 off-policy actor–critic이다. 결정론적 정책은 탐험이 별도 잡음에 의존한다.\par
+연속 행동 공간에서는 매 상태에서 $\arg\max_aQ(s,a)$를 격자 탐색할 수 없다. DDPG는 actor $\mu_\theta(s)$가 행동을 제안하고 critic $Q_\phi(s,a)$가 평가하도록 해, chain rule로 $\nabla_\theta J\approx\mathbb E[\nabla_aQ_\phi(s,a)|_{a=\mu(s)}\nabla_\theta\mu_\theta(s)]$를 계산한다. replay buffer와 target actor/critic을 사용하는 off-policy actor–critic이다. 결정론적 정책은 탐험이 별도 잡음에 의존한다.\par
 \par\medskip
 DDPG critic의 max target은 Q 과대추정과 actor의 exploit에 취약하다. TD3는 clipped double Q로 두 critic 중 작은 값을 사용하고, target policy smoothing으로 target 행동에 제한된 잡음을 더하며, delayed policy update로 critic이 더 자주 학습되게 한다. 이는 세 장치가 각각 과대추정·좁은 Q 오류·actor-critic 시간척도 문제를 겨냥한다.\par
 \par\medskip
