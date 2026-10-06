@@ -26,4 +26,4 @@
 - tools/build_tex.py: LaTeX 문서 생성
 - tools/check.mjs: 이미지·페이지·내부 링크 검증
 
-사이트와 PDF는 GitHub Actions에서 함께 생성하여 GitHub Pages에 게시합니다. 로컬에서 사이트만 생성할 때는 Node.js 24 이상에서 npm install과 npm run build를 실행합니다. PDF는 Python 3으로 tools/build_tex.py를 실행한 뒤 XeLaTeX로 guide/main.tex를 두 차례 컴파일합니다.
+GitHub Actions는 사이트를 생성하고 PDF와 함께 GitHub Pages에 게시합니다. 로컬에서 사이트를 생성할 때는 Node.js 24 이상에서 npm install과 npm run build를 실행합니다. PDF는 Python 3으로 tools/build_tex.py를 실행한 뒤 XeLaTeX로 guide/main.tex를 두 차례 컴파일합니다.

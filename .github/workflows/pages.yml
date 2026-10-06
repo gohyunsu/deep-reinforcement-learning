@@ -24,18 +24,6 @@ jobs:
           node-version: 24
       - run: npm install --no-audit --no-fund
       - run: npm run build
-      - name: Generate LaTeX source
-        run: python3 tools/build_tex.py
-      - name: Install XeLaTeX and Korean fonts
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends texlive-xetex texlive-lang-korean texlive-latex-recommended texlive-fonts-recommended fonts-noto-cjk
-      - name: Compile PDF guide
-        run: |
-          mkdir -p tmp/latex-output
-          xelatex -interaction=nonstopmode -halt-on-error -output-directory=tmp/latex-output -jobname=study-guide guide/main.tex
-          xelatex -interaction=nonstopmode -halt-on-error -output-directory=tmp/latex-output -jobname=study-guide guide/main.tex
-          cp tmp/latex-output/study-guide.pdf docs/study-guide.pdf
       - run: npm run check
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
