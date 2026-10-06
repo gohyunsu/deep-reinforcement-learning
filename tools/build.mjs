@@ -4,6 +4,7 @@ import { marked } from 'marked';
 const root=path.resolve(import.meta.dirname,'..'),docs=path.join(root,'docs');
 const chapters=JSON.parse(fs.readFileSync(path.join(root,'content/chapters.json'),'utf8'));
 const outline=JSON.parse(fs.readFileSync(path.join(root,'content/outline.json'),'utf8'));
+const followUps=JSON.parse(fs.readFileSync(path.join(root,'content/followups.json'),'utf8'));
 const src=c=>outline.find(x=>x.file===c.source);
 const deck=c=>c.source.replace(/^DRL_/,'').replace(/\.pdf$/i,'');
 const slides=c=>src(c).titles.map((title,i)=>({number:String(i+1).padStart(2,'0'),title:title||('슬라이드 '+(i+1)),range:c.ranges.find(r=>i+1>=r.from&&i+1<=r.to)}));
@@ -101,31 +102,47 @@ function slideFocus(c,s,i){
  if(t.includes('example'))return '예시를 정책과 환경의 관점으로 다시 적습니다. 관측 상태, 선택 행동, 전이 확률, 보상 시점, 종료 여부를 분리하면 뒤의 수식을 같은 표기로 계산할 수 있습니다.';
  if(t.includes('why'))return '질문형 제목에 답할 때 가정과 실패 모드를 먼저 적고, 다음 페이지의 해결책이 어떤 문제를 줄이는지 비교합니다.';
  if(t.includes('value'))return '이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.';
- return '슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.';
+ if(c.id==='01-1'){
+  if(t.includes('reinforcement learning'))return '강화학습은 에이전트가 행동을 선택하고 환경에서 다음 상태와 보상을 받는 과정을 반복해 정책을 개선한다. 행동마다 정답을 받는 지도학습과 달리 보상은 결과를 평가하며, 행동의 질은 이후 상태와 누적 보상까지 고려해 판단한다.';
+  if(t.includes('plan for today'))return '이 목차는 먼저 지도학습만으로 충분한지 묻고, 행동이 미래 상태를 바꾸는 문제를 강화학습으로 형식화한 다음, 게임·로봇·생성 모델 사례로 연결한다. 뒤의 알고리즘은 이 순차 결정 문제를 데이터와 목적함수의 차이로 풀어 간다.';
+  if(t.includes('supervised learning'))return '지도학습은 입력과 정답 행동의 쌍을 학습하므로 명확한 라벨이 있을 때 강력하다. 그러나 예측한 행동이 다음 입력을 바꾸거나 여러 단계의 성공을 좌우하면, 각 시점의 라벨 오차와 실제 누적 성과가 일치하지 않을 수 있다. 이 간극이 강화학습을 고려하는 출발점이다.';
+  if(t.includes('prefixrl'))return 'PrefixRL은 칩 배치·배선 설계처럼 큰 조합 공간을 탐색하는 전자설계자동화 문제에 강화학습을 적용한 사례다. 정책이 설계 선택을 순차적으로 하고 최종 회로 품질을 보상으로 받으므로, 중간 결정의 장기 효과를 평가할 수 있다.';
+  if(t.includes('diffusion')||t.includes('bl ck'))return '확산 모델은 품질뿐 아니라 프롬프트 정합성·압축성 같은 여러 기준 사이의 절충을 한다. 선호나 품질 점수를 보상으로 정의하면 강화학습으로 생성 결과의 분포를 조정할 수 있지만, 보상모델의 편향과 보상 해킹도 함께 점검해야 한다.';
+  if(t.includes('gpt')||t.includes('karpathy'))return '언어모델 정렬은 사전학습 다음에 시연 답변으로 지도 미세조정하고, 선호 비교로 보상모델을 학습한 뒤, 그 보상을 높이는 방향으로 정책을 업데이트하는 흐름으로 볼 수 있다. 각 단계는 데이터의 양·품질과 최적화 목표가 다르다.';
+  if(t.includes('breakthrough'))return 'AlphaGo의 이세돌 대국은 가능한 수를 전부 열거하는 대신 정책과 가치 추정, 탐색을 결합해 강한 수를 찾을 수 있음을 보여 주었다. 특히 예상과 다른 수가 성공한 장면은 학습된 정책이 인간의 고정관념을 반복하는 데 그치지 않을 수 있다는 사례다.';
+  if(t.includes('why study'))return '강화학습의 가치는 모든 예측 문제를 대체하는 데 있지 않다. 행동이 환경을 바꾸고 지금의 선택이 이후 기회와 비용에 영향을 주는 문제에서 장기 결과를 직접 개선하는 데 있다.';
+  if(t.includes('prerequisite'))return '확률은 정책의 기대 성과와 표본 추정을, 미적분은 정책경사와 함수 최적화를, 선형대수와 신경망은 상태·행동의 표현을 이해하는 데 쓰인다. 수업 중 각 도구가 필요한 지점을 연결하면 수식이 갑자기 등장하는 이유가 분명해진다.';
+  if(t.includes('course overview')||t.includes('what you will learn'))return '이 강의는 문제 형식화에서 출발해 정책·가치 기반 알고리즘과 오프라인 학습까지 이어진다. 각 방법을 목적함수, 데이터 수집 방식, 추정 오차와 안정성이라는 공통 축에서 비교한다.';
+  if(t.includes('warning')||t.includes('grading')||t.includes('homework')||t.includes('attendance')||t.includes('participation')||t.includes('exam'))return '이 슬라이드는 강좌 운영과 평가 방식의 기준을 정리한다. 학습 계획을 세울 때 평가 비중과 과제·시험의 역할을 확인하고, 알고리즘의 수학적 이해와 실제 구현을 함께 준비한다.';
+  if(t.includes('reference')||t.includes('resource')||t.includes('information'))return '참고 자료는 강의에서 소개한 개념을 교재의 정식 정의와 원 논문의 알고리즘으로 확장해 읽는 출발점이다. 개념 요약은 교재로, 특정 방법의 가정과 실험은 원 논문으로 확인한다.';
+  if(t.includes('next class'))return '이번 장은 왜 결과 중심 학습이 필요한지 동기를 세웠다. 다음 장에서는 전문가 시연을 모방하는 방법부터 살펴보고, 시연 분포를 벗어날 때 오류가 커지는 이유와 이를 보완하는 방법을 다룬다.';
+ }
+ return '이 슬라이드의 '+s.title+'를 '+(s.range?.label||'강의의 핵심 개념')+' 맥락에서 읽는다. 그림의 입력·행동·결과를 구분하고, 식이 있다면 각 항이 어떤 가정과 학습 신호를 나타내는지 설명과 대조한다.';
 }
 const mj='<script>window.MathJax={tex:{inlineMath:[["\\\\(","\\\\)"]],displayMath:[["\\\\[","\\\\]"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>';
 function shell(title,body,p){return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Deep Reinforcement Learning 슬라이드별 한국어 학습 가이드"><title>'+esc(title)+' · Deep RL</title><link rel="stylesheet" href="'+p+'assets/site.css">'+mj+'</head><body data-prefix="'+p+'"><div class="reading-progress"></div><header class="site-header"><a class="brand" href="'+p+'index.html"><span class="brand-mark">π</span><span>Deep RL <b>Guide</b></span></a><span class="header-divider"></span><span class="header-subtitle">슬라이드별 학습 가이드</span><a class="pdf-link" href="'+p+'study-guide.pdf" download>PDF 가이드 ↓</a><button type="button" class="search-trigger" data-search-trigger><span>⌕</span> 검색 <kbd>/</kbd></button></header>'+body+'<dialog id="slide-dialog" class="slide-dialog"><button data-dialog-close>×</button><img alt="확대한 슬라이드"><p></p></dialog><dialog id="search-dialog" class="search-dialog"><div class="search-panel"><div class="search-input-row"><input type="search" id="search-input" placeholder="개념, 알고리즘, 수식 검색"><button data-search-close>×</button></div><div id="search-results"></div><p class="search-hint">슬라이드 제목과 설명을 함께 검색합니다. Esc로 닫기</p></div></dialog><script src="'+p+'assets/search-index.js"></script><script src="'+p+'assets/site.js"></script></body></html>';}
 function writeIndex(){
  const cards=chapters.map(c=>'<a class="overview-card card-'+c.color+'" href="lecture/'+c.id+'.html"><div class="overview-card-top"><span>'+c.id+'</span><span>'+slides(c).length+'개 슬라이드</span></div><h3>'+esc(c.title)+'</h3><p>'+esc(c.short)+'</p><div class="card-arrow">학습하기 ↗</div></a>').join('');
- const body='<main class="home-main"><section class="home-hero"><div class="eyebrow">2026 · 2학기 · 학습 가이드</div><h1>경험에서 배우는<br><em>순차적 의사결정</em></h1><p>모방학습의 분포 이동에서 시작해 MDP와 정책경사, actor–critic, PPO, Q-learning, continuous control, offline RL까지. 강의 슬라이드와 수식의 유도, 알고리즘의 직관을 하나의 흐름으로 잇습니다.</p><div class="hero-actions"><a class="primary-button" href="lecture/01-1.html">처음부터 읽기 →</a><a class="pdf-link" href="study-guide.pdf" download>PDF 내려받기 ↓</a><span>10개 강의 · '+total+'개 슬라이드</span></div><div class="hero-formula">\\[G_t=\\sum_{k=0}^{\\infty}\\gamma^k r_{t+k}\\]</div></section><section class="learning-path"><div class="section-kicker">학습 경로</div><h2>행동에서 장기 가치로</h2><div class="path-line"><span>시연·상호작용</span><b>→</b><span>문제 형식화</span><b>→</b><span>정책·가치 학습</span><b>→</b><span>실험·배포</span></div><div class="overview-grid">'+cards+'</div></section><section class="home-note"><h2>읽는 방법</h2><p>왼쪽에 해당 페이지의 강의 슬라이드, 오른쪽에 배경 개념과 연결 설명이 놓입니다. 수식의 기호와 유도 흐름을 확인하고, 보충 설명은 펼쳐 읽으세요. 슬라이드를 누르면 확대되고, 검색으로 용어와 알고리즘을 찾을 수 있습니다.</p></section><footer class="site-footer">Deep Reinforcement Learning · 2026-2</footer></main>';
+ const body='<main class="home-main"><section class="home-hero"><div class="eyebrow">2026 · 2학기 · 학습 가이드</div><h1>경험에서 배우는<br><em>순차적 의사결정</em></h1><p>모방학습의 분포 이동에서 시작해 MDP와 정책경사, actor–critic, PPO, Q-learning, continuous control, offline RL까지. 강의 슬라이드와 수식의 유도, 알고리즘의 직관을 하나의 흐름으로 잇습니다.</p><div class="hero-actions"><a class="primary-button" href="lecture/01-1.html">처음부터 읽기 →</a><a class="pdf-link" href="study-guide.pdf" download>PDF 내려받기 ↓</a><span>10개 강의 · '+total+'개 슬라이드</span></div><div class="hero-formula">\\[G_t=\\sum_{k=0}^{\\infty}\\gamma^k r_{t+k}\\]</div></section><section class="learning-path"><div class="section-kicker">학습 경로</div><h2>행동에서 장기 가치로</h2><div class="path-line"><span>시연·상호작용</span><b>→</b><span>문제 형식화</span><b>→</b><span>정책·가치 학습</span><b>→</b><span>실험·배포</span></div><div class="overview-grid">'+cards+'</div></section><footer class="site-footer">Deep Reinforcement Learning · 2026-2</footer></main>';
  const promo='<section class="derivation-promo"><div><div class="section-kicker">수식 전개</div><h2>목적함수에서 업데이트까지</h2><p>정책경사의 로그미분, advantage의 분산 감소, GAE의 망원합, PPO clipping, DQN의 선택 편향, 오프라인 RL의 보수적 추정을 단계별로 유도합니다.</p></div><a class="primary-button" href="derivations.html">수식 유도 읽기 →</a></section>';
- fs.writeFileSync(path.join(docs,'index.html'),shell('학습 경로',body.replace('<section class="home-note">',promo+'<section class="home-note">'),''),'utf8');
+ fs.writeFileSync(path.join(docs,'index.html'),shell('학습 경로',body.replace('<footer class="site-footer">',promo+'<footer class="site-footer">'),''),'utf8');
 }
 function writeChapter(c,index){
  const ss=slides(c);
  const side='<aside class="sidebar"><a class="sidebar-home" href="../index.html">← 전체 목차</a><div class="sidebar-label">강의</div><nav class="chapter-nav">'+nav(c.id,'../')+'</nav><div class="sidebar-label sidebar-label-slides">이 장의 슬라이드</div><nav class="slide-nav">'+ss.map(s=>'<a href="#s'+s.number+'" data-slide-link="'+s.number+'"><span>'+s.number+'</span>'+esc(s.title)+'</a>').join('')+'</nav></aside>';
  const imgs=ss.map((s,i)=>{
   const img='../assets/slides/'+deck(c)+'/'+s.number+'.webp';
-  const detail='<div class="slide-reading"><p class="reading-kicker">'+esc(s.range.label)+' · 슬라이드 '+s.number+'</p><p>'+esc(slideFocus(c,s,i))+'</p><details><summary>개념 전개 펼치기</summary>'+mathHtml(s.range.note)+'</details></div>';
+  const rangeStart=s.range&&Number(s.number)===s.range.from;
+  const follow=followUps[c.id+':'+s.number];
+  const detail='<div class="slide-reading"><p>'+esc(slideFocus(c,s,i))+'</p>'+(rangeStart?'<div class="range-context"><span>'+esc(s.range.label)+'</span>'+mathHtml(s.range.note)+'</div>':'')+(follow?'<details class="follow-up"><summary>'+esc(follow[0])+'</summary>'+mathHtml(follow[1])+'</details>':'')+'</div>';
   const fig=i===4?'<figure class="concept-figure"><img src="../assets/figures/'+c.id+'.svg" alt="'+esc(c.title)+' 개념 흐름 도식" loading="lazy"><figcaption>'+esc(c.title)+'의 핵심 구조</figcaption></figure>':'';
   return '<section class="slide" id="s'+s.number+'"><div class="slide-heading"><span class="slide-index">'+c.id+' / '+s.number+'</span><h2>'+esc(s.title)+'</h2></div><div class="slide-grid"><figure class="slide-figure"><button class="slide-image-button" data-zoom-src="'+img+'" data-zoom-label="'+esc(c.id+'장 슬라이드 '+s.number)+'"><img src="'+img+'" alt="'+esc(c.id+'장 슬라이드 '+s.number+': '+s.title)+'" loading="lazy" decoding="async"><span class="zoom-hint">확대해서 보기 ↗</span></button><figcaption>슬라이드 '+s.number+'</figcaption></figure><div class="explanation">'+detail+fig+'</div></div></section>';
  }).join('');
- const notes=c.ranges.map(r=>'<section class="concept-block"><h2>'+esc(r.label)+'</h2>'+mathHtml(r.note)+'</section>').join('');
  const refs='<section class="chapter-sources"><h2>더 읽을 자료</h2><ul>'+c.sources.map(x=>'<li><a href="'+esc(x[1])+'" target="_blank" rel="noopener noreferrer">'+esc(x[0])+' ↗</a></li>').join('')+'</ul></section>';
  const prev=chapters[index-1],next=chapters[index+1];
  const pager='<nav class="chapter-pager">'+(prev?'<a href="'+prev.id+'.html"><small>이전 장</small><strong>← '+esc(prev.title)+'</strong></a>':'<span></span>')+(next?'<a href="'+next.id+'.html"><small>다음 장</small><strong>'+esc(next.title)+' →</strong></a>':'<span></span>')+'</nav>';
- const hero='<section class="lecture-hero"><div class="eyebrow">'+c.id+'장 · '+ss.length+'개 슬라이드</div><h1>'+esc(c.title)+'</h1><div class="lecture-intro">'+mathHtml(c.intro)+'</div><div class="lecture-start"><a href="#s01">첫 슬라이드로 내려가기 ↓</a><span>'+(index+1)+' / '+chapters.length+'</span></div><div class="chapter-notes"><h2>개념 흐름</h2>'+notes+refs+'</div></section>';
- const body='<div class="layout">'+side+'<main class="lecture-main">'+hero+imgs+pager+'<footer class="site-footer">Deep Reinforcement Learning · 2026-2</footer></main></div>';
+ const hero='<section class="lecture-hero"><div class="eyebrow">'+c.id+'장 · '+ss.length+'개 슬라이드</div><h1>'+esc(c.title)+'</h1><div class="lecture-intro">'+mathHtml(c.intro)+'</div><div class="lecture-start"><a href="#s01">첫 슬라이드로 내려가기 ↓</a><span>'+(index+1)+' / '+chapters.length+'</span></div></section>';
+ const body='<div class="layout">'+side+'<main class="lecture-main">'+hero+imgs+refs+pager+'<footer class="site-footer">Deep Reinforcement Learning · 2026-2</footer></main></div>';
  fs.writeFileSync(path.join(docs,'lecture',c.id+'.html'),shell(c.title,body,'../'),'utf8');
 }
 function writeDerivations(){

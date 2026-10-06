@@ -1,6 +1,6 @@
 # Deep Reinforcement Learning · 슬라이드별 학습 가이드
 
-**[학습 사이트](https://gohyunsu.github.io/deep-reinforcement-learning-guide/)** · **[PDF 학습 가이드](https://gohyunsu.github.io/deep-reinforcement-learning-guide/study-guide.pdf)**
+**[학습 사이트](https://gohyunsu.github.io/deep-reinforcement-learning/)** · **[PDF 학습 가이드](https://gohyunsu.github.io/deep-reinforcement-learning/study-guide.pdf)**
 
 순차적 의사결정의 수학적 기초에서 imitation learning, policy gradient, actor–critic, PPO, Q-learning, continuous control, benchmark, offline RL까지 이어지는 한국어 학습 자료입니다. 10개 강의 묶음, 339개 슬라이드의 이미지와 설명을 나란히 읽을 수 있습니다.
 
@@ -19,7 +19,7 @@
 | 05-2 | 실험 설계와 RL 벤치마크 | 13 |
 | 06 | Offline RL: TD3+BC, CQL, AWR, IQL | 42 |
 
-각 슬라이드는 강의 이미지와 설명을 한 화면에 배치합니다. 확률·기대값·Bellman 방정식·정책경사·importance sampling·GAE·Q-learning 목표·보수적 가치 추정은 필요한 전제부터 차근차근 전개합니다. 추가 직관과 가정은 펼쳐 읽을 수 있습니다.
+각 슬라이드는 강의 이미지와 기본 설명을 함께 보여 줍니다. 확률·기대값·Bellman 방정식·정책경사·importance sampling·GAE·Q-learning 목표·보수적 가치 추정은 필요한 전제부터 차근차근 전개합니다. 오개념과 후속 질문처럼 보충이 필요한 내용만 선택해 펼쳐 읽을 수 있습니다.
 
 ## 프로젝트 구조
 
