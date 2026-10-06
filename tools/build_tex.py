@@ -174,6 +174,7 @@ def main():
         parts.append(r"\section{" + escape(first.removeprefix("# ")) + "}\n")
         parts.append(markdown(rest, slide_headings=True))
         parts.append(r"\clearpage")
+    parts.append(r"\setlength{\parskip}{0.35em}")
     parts.append(r"\section{과제 가이드}")
     for assignment in assignments:
         source = (CONTENT / "assignments" / assignment["file"]).read_text(encoding="utf-8")
