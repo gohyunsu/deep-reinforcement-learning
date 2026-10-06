@@ -63,7 +63,7 @@
     "title": "Imitation learning과 로봇 정책",
     "short": "시연 데이터에서 자율 행동으로",
     "color": "teal",
-    "intro": "모방학습(imitation learning)은 전문가의 행동 예시에서 정책을 배우는 방법이다. 가장 단순한 행동 복제(behavioral cloning, BC)는 데이터 \\(\\mathcal D=\\{(s_i,a_i)\\}\\)를 지도학습으로 처리한다. 이 접근은 정답 행동을 수집할 수 있는 로봇 조작·자율주행·인터페이스 문제에서 효과적이며, 보상 설계 없이 빠르게 출발할 수 있다. 하지만 학습 상태 분포와 실제 정책이 방문하는 상태 분포가 달라지면 작은 오차가 누적된다.\n\n행동 오차가 상태를 바꾸고, 바뀐 상태에서 다시 잘못된 행동을 내면 오류가 연쇄적으로 커진다. DAgger는 학습된 정책이 방문한 상태에서 전문가의 교정 행동을 받아 데이터에 추가해 이 분포 이동을 완화한다. 다중 모드 시연에서는 평균 제곱 오차가 서로 다른 유효 행동의 평균을 만들어 무효 행동을 낼 수 있으므로 확률적·표현력 있는 정책이 필요하다. ALOHA/ACT, Mobile ALOHA, Diffusion Policy, 로봇 데이터셋과 VLA 사례는 데이터 규모·행동 표현·일반화가 실제 시스템에서 왜 중요한지 보여 준다.\n\n**행동 복제 손실의 출발점.** 이산 행동에서 정책은 범주분포 \\(\\pi_\theta(a\\mid s)\\)이고, 음의 로그우도는\n\n$$\n\\mathcal L_{BC}(\theta)=-\frac1N\\sum_{i=1}^N\\log\\pi_\theta(a_i\\mid s_i).\n$$\n\n연속 행동에서는 흔히 정책이 평균과 공분산을 출력하는 정규분포를 두고 같은 우도 목적을 쓴다. 평균 제곱 오차는 등분산 Gaussian 우도의 특수한 형태다. 이 손실이 직접 최적화하는 것은 관측된 상태에서의 행동 예측이며, 장기 누적 보상의 극대화와 같지는 않다.",
+    "intro": "모방학습(imitation learning)은 전문가의 행동 예시에서 정책을 배우는 방법이다. 가장 단순한 행동 복제(behavioral cloning, BC)는 데이터 \\(\\mathcal D=\\{(s_i,a_i)\\}\\)를 지도학습으로 처리한다. 이 접근은 정답 행동을 수집할 수 있는 로봇 조작·자율주행·인터페이스 문제에서 효과적이며, 보상 설계 없이 빠르게 출발할 수 있다. 하지만 학습 상태 분포와 실제 정책이 방문하는 상태 분포가 달라지면 작은 오차가 누적된다.\n\n행동 오차가 상태를 바꾸고, 바뀐 상태에서 다시 잘못된 행동을 내면 오류가 연쇄적으로 커진다. DAgger는 학습된 정책이 방문한 상태에서 전문가의 교정 행동을 받아 데이터에 추가해 이 분포 이동을 완화한다. 다중 모드 시연에서는 평균 제곱 오차가 서로 다른 유효 행동의 평균을 만들어 무효 행동을 낼 수 있으므로 확률적·표현력 있는 정책이 필요하다. ALOHA/ACT, Mobile ALOHA, Diffusion Policy, 로봇 데이터셋과 VLA 사례는 데이터 규모·행동 표현·일반화가 실제 시스템에서 왜 중요한지 보여 준다.\n\n**행동 복제 손실의 출발점.** 이산 행동에서 정책은 범주분포 \\(\\pi_\\theta(a\\mid s)\\)이고, 음의 로그우도는\n\n$$\n\\mathcal L_{BC}(\\theta)=-\\frac1N\\sum_{i=1}^N\\log\\pi_\\theta(a_i\\mid s_i).\n$$\n\n연속 행동에서는 흔히 정책이 평균과 공분산을 출력하는 정규분포를 두고 같은 우도 목적을 쓴다. 평균 제곱 오차는 등분산 Gaussian 우도의 특수한 형태다. 이 손실이 직접 최적화하는 것은 관측된 상태에서의 행동 예측이며, 장기 누적 보상의 극대화와 같지는 않다.",
     "sources": [
       [
         "Ross et al., DAgger",
@@ -203,7 +203,7 @@
     "title": "Policy gradient와 REINFORCE",
     "short": "확률적 정책을 기대 보상으로 최적화",
     "color": "blue",
-    "intro": "정책경사는 행동을 직접 고르는 정책 \\(\\pi_\theta(a\\mid s)\\)의 기대 성능 \\(J(\theta)=\\mathbb E_{\tau\\sim\\pi_\theta}[R(\tau)]\\)을 미분한다. trajectory 확률에는 환경 전이도 포함되지만, 환경 미분이 불가능해도 score-function identity로 정책 매개변수에 대한 gradient를 얻는다.\n\n**로그미분 트릭의 유도.** 분포가 매개변수에 의존하는 기대값을 적분으로 쓰면\n\n$$\n\nabla_\theta J=\nabla_\theta\\int p_\theta(\tau)R(\tau)d\tau=\\int p_\theta(\tau)\nabla_\theta\\log p_\theta(\tau)R(\tau)d\tau.\n\n$$\n\n따라서 \\(\nabla J=\\mathbb E[\nabla\\log p_\theta(\tau)R(\tau)]\\)다. trajectory 확률을 초기상태·정책·환경전이의 곱으로 분해하면 정책에 의존하는 항만 남아 \\(\\sum_t\nabla\\log\\pi_\theta(a_t\\mid s_t)\\)가 된다. 이는 score-function estimator 또는 likelihood-ratio estimator다. 환경의 미분이 필요 없다는 장점이 있지만 반환 전체가 각 행동의 점수에 곱해져 분산이 크다.\n\nREINFORCE는 이 기대값을 실제 궤적 표본의 평균으로 근사해 경사 상승한다. Monte Carlo 반환은 편향이 작지만 분산이 크고, 업데이트 후에는 새 정책의 데이터를 다시 모아야 하는 on-policy 방법이다. 표본 수를 늘리면 독립 표본 가정 아래 평균 추정량의 표준오차는 대략 \\(1/\\sqrt N\\)으로 줄지만 환경 상호작용 비용이 든다.",
+    "intro": "정책경사는 행동을 직접 고르는 정책 \\(\\pi_\\theta(a\\mid s)\\)의 기대 성능 \\(J(\\theta)=\\mathbb E_{\\tau\\sim\\pi_\\theta}[R(\\tau)]\\)을 미분한다. trajectory 확률에는 환경 전이도 포함되지만, 환경 미분이 불가능해도 score-function identity로 정책 매개변수에 대한 gradient를 얻는다.\n\n**로그미분 트릭의 유도.** 분포가 매개변수에 의존하는 기대값을 적분으로 쓰면\n\n$$\n\nabla_\\theta J=\nabla_\\theta\\int p_\\theta(\\tau)R(\\tau)d\\tau=\\int p_\\theta(\\tau)\nabla_\\theta\\log p_\\theta(\\tau)R(\\tau)d\\tau.\n\n$$\n\n따라서 \\(\\nabla J=\\mathbb E[\\nabla\\log p_\\theta(\\tau)R(\\tau)]\\)다. trajectory 확률을 초기상태·정책·환경전이의 곱으로 분해하면 정책에 의존하는 항만 남아 \\(\\sum_t\\nabla\\log\\pi_\\theta(a_t\\mid s_t)\\)가 된다. 이는 score-function estimator 또는 likelihood-ratio estimator다. 환경의 미분이 필요 없다는 장점이 있지만 반환 전체가 각 행동의 점수에 곱해져 분산이 크다.\n\nREINFORCE는 이 기대값을 실제 궤적 표본의 평균으로 근사해 경사 상승한다. Monte Carlo 반환은 편향이 작지만 분산이 크고, 업데이트 후에는 새 정책의 데이터를 다시 모아야 하는 on-policy 방법이다. 표본 수를 늘리면 독립 표본 가정 아래 평균 추정량의 표준오차는 대략 \\(1/\\sqrt N\\)으로 줄지만 환경 상호작용 비용이 든다.",
     "sources": [
       [
         "Williams, Simple statistical gradient-following algorithms for connectionist reinforcement learning",
@@ -225,7 +225,7 @@
         "from": 7,
         "to": 10,
         "label": "로그미분 유도",
-        "note": "분포를 미분하는 대신 \\(\nabla p=p\nabla\\log p\\)를 이용해 점수함수와 보상의 곱의 기댓값으로 바꾼다. 식의 순서를 따라 적분 → 미분 → 로그미분 항등식 → 표본 평균을 확인한다. 보상은 gradient를 만든다기보다 좋은 trajectory에 더 큰 가중치를 부여한다."
+        "note": "분포를 미분하는 대신 \\(\\nabla p=p\\nabla\\log p\\)를 이용해 점수함수와 보상의 곱의 기댓값으로 바꾼다. 식의 순서를 따라 적분 → 미분 → 로그미분 항등식 → 표본 평균을 확인한다. 보상은 gradient를 만든다기보다 좋은 trajectory에 더 큰 가중치를 부여한다."
       },
       {
         "from": 11,
@@ -253,7 +253,7 @@
     "title": "가치함수와 Actor–Critic",
     "short": "반환의 분산을 줄이는 학습 신호",
     "color": "teal",
-    "intro": "정책경사에서 행동 \\(a_t\\)는 그 뒤의 보상에만 인과적으로 영향을 준다. 따라서 시점 \\(t\\)의 점수함수에 전체 episode return 대신 reward-to-go \\(G_t=\\sum_{k=t}^{T}\\gamma^{k-t}r_k\\)를 곱해도 기대 gradient는 유지하면서 무관한 과거 보상이 만드는 분산을 줄인다.\n\n상태가치 \\(V^\\pi(s)=\\mathbb E[G_t\\mid s_t=s]\\), 행동가치 \\(Q^\\pi(s,a)=\\mathbb E[G_t\\mid s_t=s,a_t=a]\\), advantage \\(A^\\pi(s,a)=Q^\\pi(s,a)-V^\\pi(s)\\)는 서로 다른 질문에 답한다. 현재 상태가 평균적으로 좋은가(V), 이 행동을 선택했을 때 좋은가(Q), 같은 상태의 평균 행동보다 얼마나 나은가(A)다. 정책경사 정리에서는\n\n$$\n\n\nabla_\theta J=\\mathbb E_{s,a\\sim\\pi_\theta}[\nabla_\theta\\log\\pi_\theta(a\\mid s)Q^\\pi(s,a)].\n\n$$\n\n임의의 상태기반 baseline \\(b(s)\\)를 빼도 기대값이 바뀌지 않는다. 이유는 \\(\\mathbb E_{a\\sim\\pi}[\nabla\\log\\pi(a\\mid s)b(s)]=b(s)\nabla\\sum_a\\pi(a\\mid s)=0\\)이기 때문이다. \\(b=V\\)를 택하면 advantage를 얻는다. baseline은 분산을 줄이지만 부정확한 근사치를 쓰면 variance 감소 폭이 작아질 수 있다.\n\nActor–critic은 actor가 정책을, critic이 가치함수를 학습한다. critic이 trajectory return의 noisy label 대신 bootstrap target을 제공하면 표본 효율을 높일 수 있지만, critic 오차가 actor 업데이트에 편향을 전달한다. 작은 step을 여러 번 사용할지, 추정 편향을 얼마나 감수할지가 핵심 설계 선택이다.",
+    "intro": "정책경사에서 행동 \\(a_t\\)는 그 뒤의 보상에만 인과적으로 영향을 준다. 따라서 시점 \\(t\\)의 점수함수에 전체 episode return 대신 reward-to-go \\(G_t=\\sum_{k=t}^{T}\\gamma^{k-t}r_k\\)를 곱해도 기대 gradient는 유지하면서 무관한 과거 보상이 만드는 분산을 줄인다.\n\n상태가치 \\(V^\\pi(s)=\\mathbb E[G_t\\mid s_t=s]\\), 행동가치 \\(Q^\\pi(s,a)=\\mathbb E[G_t\\mid s_t=s,a_t=a]\\), advantage \\(A^\\pi(s,a)=Q^\\pi(s,a)-V^\\pi(s)\\)는 서로 다른 질문에 답한다. 현재 상태가 평균적으로 좋은가(V), 이 행동을 선택했을 때 좋은가(Q), 같은 상태의 평균 행동보다 얼마나 나은가(A)다. 정책경사 정리에서는\n\n$$\n\n\nabla_\\theta J=\\mathbb E_{s,a\\sim\\pi_\\theta}[\nabla_\\theta\\log\\pi_\\theta(a\\mid s)Q^\\pi(s,a)].\n\n$$\n\n임의의 상태기반 baseline \\(b(s)\\)를 빼도 기대값이 바뀌지 않는다. 이유는 \\(\\mathbb E_{a\\sim\\pi}[\\nabla\\log\\pi(a\\mid s)b(s)]=b(s)\\nabla\\sum_a\\pi(a\\mid s)=0\\)이기 때문이다. \\(b=V\\)를 택하면 advantage를 얻는다. baseline은 분산을 줄이지만 부정확한 근사치를 쓰면 variance 감소 폭이 작아질 수 있다.\n\nActor–critic은 actor가 정책을, critic이 가치함수를 학습한다. critic이 trajectory return의 noisy label 대신 bootstrap target을 제공하면 표본 효율을 높일 수 있지만, critic 오차가 actor 업데이트에 편향을 전달한다. 작은 step을 여러 번 사용할지, 추정 편향을 얼마나 감수할지가 핵심 설계 선택이다.",
     "sources": [
       [
         "Sutton & Barto, Reinforcement Learning: An Introduction",
@@ -275,7 +275,7 @@
         "from": 8,
         "to": 10,
         "label": "기댓값과 reward-to-go",
-        "note": "로그미분 항등식 \\(\nabla p=p\nabla\\log p\\)와 tower property가 핵심이다. 미래 반환만 사용하는 것이 왜 unbiased인지 보이려면, 현재 행동과 무관한 과거 보상 항의 조건부 기댓값이 score의 평균 0과 곱해져 사라짐을 확인한다."
+        "note": "로그미분 항등식 \\(\\nabla p=p\\nabla\\log p\\)와 tower property가 핵심이다. 미래 반환만 사용하는 것이 왜 unbiased인지 보이려면, 현재 행동과 무관한 과거 보상 항의 조건부 기댓값이 score의 평균 0과 곱해져 사라짐을 확인한다."
       },
       {
         "from": 11,
@@ -299,7 +299,7 @@
         "from": 31,
         "to": 35,
         "label": "Actor–critic의 데이터 흐름",
-        "note": "actor는 \\(\nabla\\log\\pi\\) 방향으로 advantage가 큰 행동의 확률을 높이고, critic은 상태 또는 행동 가치를 회귀한다. on-policy actor–critic은 새 궤적을 계속 요구할 수 있고, critic 재사용은 효율과 추정 편향 사이의 절충이다."
+        "note": "actor는 \\(\\nabla\\log\\pi\\) 방향으로 advantage가 큰 행동의 확률을 높이고, critic은 상태 또는 행동 가치를 회귀한다. on-policy actor–critic은 새 궤적을 계속 요구할 수 있고, critic 재사용은 효율과 추정 편향 사이의 절충이다."
       }
     ]
   },
@@ -309,7 +309,7 @@
     "title": "GAE와 Proximal Policy Optimization",
     "short": "분산을 관리하고 정책 변화를 제한",
     "color": "amber",
-    "intro": "N-step 반환은 일부 실제 보상을 더한 뒤 마지막 상태가치로 bootstrap한다. \\(n\\)이 길어지면 bootstrap 편향은 줄어드는 경향이 있지만 Monte Carlo에 가까워져 분산이 커진다. Generalized Advantage Estimation(GAE)은 TD 잔차 \\(\\delta_t=r_t+\\gamma V(s_{t+1})-V(s_t)\\)의 지수 가중합으로 이 절충을 제어한다.\n\n$$\n\n\\hat A_t^{GAE(\\gamma,\\lambda)}=\\sum_{l=0}^{\\infty}(\\gamma\\lambda)^l\\delta_{t+l}.\n\n$$\n\n\\(\\lambda=0\\)이면 한 단계 TD 잔차에 가깝고, \\(\\lambda=1\\)이면 종료까지 잔차를 합쳐 Monte Carlo advantage와 연결된다(terminal 처리와 가치 근사 가정하에서). \\(\\lambda\\)는 단순한 성능 상수가 아니라 bias–variance 절충을 조절한다.\n\nPPO는 수집 정책과 현재 정책의 확률비 \\(r_t(\theta)=\\pi_\theta(a_t\\mid s_t)/\\pi_{old}(a_t\\mid s_t)\\)를 계산하고 clipped surrogate\n\n$$\n\nL^{CLIP}=\\mathbb E_t[\\min(r_t\\hat A_t,\\operatorname{clip}(r_t,1-\\epsilon,1+\\epsilon)\\hat A_t)]\n\n$$\n\n를 최대화한다. \\(\\hat A>0\\)일 때 확률비를 너무 크게 올리는 이득을 자르고, \\(\\hat A<0\\)일 때 너무 작게 내리는 이득을 잘라 한 번의 업데이트가 과도하게 멀어지는 것을 억제한다. 이것은 정책변화를 엄밀히 제한하는 hard constraint가 아니며, clipping만으로 학습이 안정하다고 보장되지 않는다. 가치 손실·엔트로피 보너스·정규화·batch 구성과 rollout 길이도 함께 영향을 준다.",
+    "intro": "N-step 반환은 일부 실제 보상을 더한 뒤 마지막 상태가치로 bootstrap한다. \\(n\\)이 길어지면 bootstrap 편향은 줄어드는 경향이 있지만 Monte Carlo에 가까워져 분산이 커진다. Generalized Advantage Estimation(GAE)은 TD 잔차 \\(\\delta_t=r_t+\\gamma V(s_{t+1})-V(s_t)\\)의 지수 가중합으로 이 절충을 제어한다.\n\n$$\n\n\\hat A_t^{GAE(\\gamma,\\lambda)}=\\sum_{l=0}^{\\infty}(\\gamma\\lambda)^l\\delta_{t+l}.\n\n$$\n\n\\(\\lambda=0\\)이면 한 단계 TD 잔차에 가깝고, \\(\\lambda=1\\)이면 종료까지 잔차를 합쳐 Monte Carlo advantage와 연결된다(terminal 처리와 가치 근사 가정하에서). \\(\\lambda\\)는 단순한 성능 상수가 아니라 bias–variance 절충을 조절한다.\n\nPPO는 수집 정책과 현재 정책의 확률비 \\(r_t(\\theta)=\\pi_\\theta(a_t\\mid s_t)/\\pi_{old}(a_t\\mid s_t)\\)를 계산하고 clipped surrogate\n\n$$\n\nL^{CLIP}=\\mathbb E_t[\\min(r_t\\hat A_t,\\operatorname{clip}(r_t,1-\\epsilon,1+\\epsilon)\\hat A_t)]\n\n$$\n\n를 최대화한다. \\(\\hat A>0\\)일 때 확률비를 너무 크게 올리는 이득을 자르고, \\(\\hat A<0\\)일 때 너무 작게 내리는 이득을 잘라 한 번의 업데이트가 과도하게 멀어지는 것을 억제한다. 이것은 정책변화를 엄밀히 제한하는 hard constraint가 아니며, clipping만으로 학습이 안정하다고 보장되지 않는다. 가치 손실·엔트로피 보너스·정규화·batch 구성과 rollout 길이도 함께 영향을 준다.",
     "sources": [
       [
         "Schulman et al., Proximal Policy Optimization Algorithms",
@@ -363,7 +363,7 @@
     "title": "Q-learning, DQN과 Rainbow",
     "short": "행동가치의 Bellman 최적성으로 학습",
     "color": "blue",
-    "intro": "가치기반 방법은 각 상태·행동의 장기 결과를 Q 함수로 추정한 뒤 높은 Q를 주는 행동을 고른다. 최적 행동가치의 Bellman 식은 \\(Q^*(s,a)=\\mathbb E[r+\\gamma\\max_{a'}Q^*(s',a')]\\)다. 학습에서는 target \\(y=r+\\gamma\\max_{a'}Q_{target}(s',a')\\)에 현재 \\(Q_\theta(s,a)\\)를 맞추는 TD 회귀를 한다. \\(\\max\\)가 탐험과 정책 선택을 분리하고, Q-learning을 off-policy control로 만든다.\n\n신경망 Q-learning은 연속 표본 상관과 moving target에 취약하다. replay buffer는 과거 transition을 섞어 표본 상관을 낮추고 데이터 재사용을 돕는다. target network는 목표 계산을 느리게 바꾸어 최적화 대상의 진동을 줄인다. 하지만 둘 모두 안정성을 돕는 장치이지 수렴을 보증하는 해결책은 아니다.\n\nmax 연산은 잡음이 있는 추정값 중 가장 큰 것을 선택해 과대추정한다. Double DQN은 온라인 네트워크가 행동을 선택하고 target 네트워크가 그 행동을 평가해 선택과 평가의 오차를 분리한다. 이후 N-step return, prioritized replay, dueling network, distributional value 등을 결합한 Rainbow가 구성된다. Distributional RL은 기대값 하나 대신 가능한 반환의 분포 \\(Z(s,a)\\)를 학습한다. 기대값은 여전히 행동 선택 기준으로 쓸 수 있지만 위험 민감 목표라면 분포 자체의 정보가 유용하다.",
+    "intro": "가치기반 방법은 각 상태·행동의 장기 결과를 Q 함수로 추정한 뒤 높은 Q를 주는 행동을 고른다. 최적 행동가치의 Bellman 식은 \\(Q^*(s,a)=\\mathbb E[r+\\gamma\\max_{a'}Q^*(s',a')]\\)다. 학습에서는 target \\(y=r+\\gamma\\max_{a'}Q_{target}(s',a')\\)에 현재 \\(Q_\\theta(s,a)\\)를 맞추는 TD 회귀를 한다. \\(\\max\\)가 탐험과 정책 선택을 분리하고, Q-learning을 off-policy control로 만든다.\n\n신경망 Q-learning은 연속 표본 상관과 moving target에 취약하다. replay buffer는 과거 transition을 섞어 표본 상관을 낮추고 데이터 재사용을 돕는다. target network는 목표 계산을 느리게 바꾸어 최적화 대상의 진동을 줄인다. 하지만 둘 모두 안정성을 돕는 장치이지 수렴을 보증하는 해결책은 아니다.\n\nmax 연산은 잡음이 있는 추정값 중 가장 큰 것을 선택해 과대추정한다. Double DQN은 온라인 네트워크가 행동을 선택하고 target 네트워크가 그 행동을 평가해 선택과 평가의 오차를 분리한다. 이후 N-step return, prioritized replay, dueling network, distributional value 등을 결합한 Rainbow가 구성된다. Distributional RL은 기대값 하나 대신 가능한 반환의 분포 \\(Z(s,a)\\)를 학습한다. 기대값은 여전히 행동 선택 기준으로 쓸 수 있지만 위험 민감 목표라면 분포 자체의 정보가 유용하다.",
     "sources": [
       [
         "Mnih et al., Human-level control through deep reinforcement learning",
@@ -429,7 +429,7 @@
     "title": "연속 제어: DDPG, TD3, SAC",
     "short": "결정론적 actor에서 최대 엔트로피 정책까지",
     "color": "teal",
-    "intro": "연속 행동 공간에서는 매 상태에서 \\(\\arg\\max_aQ(s,a)\\)를 격자 탐색할 수 없다. DDPG는 actor \\(\\mu_\theta(s)\\)가 행동을 제안하고 critic \\(Q_\\phi(s,a)\\)가 평가하도록 해, chain rule로 \\(\nabla_\theta J\\approx\\mathbb E[\nabla_aQ_\\phi(s,a)|_{a=\\mu(s)}\nabla_\theta\\mu_\theta(s)]\\)를 계산한다. replay buffer와 target actor/critic을 사용하는 off-policy actor–critic이다. 결정론적 정책은 탐험이 별도 잡음에 의존한다.\n\nDDPG critic의 max target은 Q 과대추정과 actor의 exploit에 취약하다. TD3는 clipped double Q로 두 critic 중 작은 값을 사용하고, target policy smoothing으로 target 행동에 제한된 잡음을 더하며, delayed policy update로 critic이 더 자주 학습되게 한다. 이는 세 장치가 각각 과대추정·좁은 Q 오류·actor-critic 시간척도 문제를 겨냥한다.\n\nSAC는 확률적 정책과 엔트로피 보너스를 통해 기대 보상과 행동의 무작위성을 함께 최적화한다. 목적식은 \\(\\mathbb E[\\sum_t r_t+\\alpha\\mathcal H(\\pi(\\cdot\\mid s_t))]\\)다. 온도 \\(\\alpha\\)가 보상과 엔트로피의 상대 비중을 정한다. SAC는 탐험을 정책 분포 안에 넣지만, 엔트로피가 항상 유익한 것은 아니며 학습 후 평가 시 샘플링 또는 평균 행동을 어떻게 사용할지도 정해야 한다.",
+    "intro": "연속 행동 공간에서는 매 상태에서 \\(\\arg\\max_aQ(s,a)\\)를 격자 탐색할 수 없다. DDPG는 actor \\(\\mu_\\theta(s)\\)가 행동을 제안하고 critic \\(Q_\\phi(s,a)\\)가 평가하도록 해, chain rule로 \\(\nabla_\\theta J\\approx\\mathbb E[\nabla_aQ_\\phi(s,a)|_{a=\\mu(s)}\nabla_\\theta\\mu_\\theta(s)]\\)를 계산한다. replay buffer와 target actor/critic을 사용하는 off-policy actor–critic이다. 결정론적 정책은 탐험이 별도 잡음에 의존한다.\n\nDDPG critic의 max target은 Q 과대추정과 actor의 exploit에 취약하다. TD3는 clipped double Q로 두 critic 중 작은 값을 사용하고, target policy smoothing으로 target 행동에 제한된 잡음을 더하며, delayed policy update로 critic이 더 자주 학습되게 한다. 이는 세 장치가 각각 과대추정·좁은 Q 오류·actor-critic 시간척도 문제를 겨냥한다.\n\nSAC는 확률적 정책과 엔트로피 보너스를 통해 기대 보상과 행동의 무작위성을 함께 최적화한다. 목적식은 \\(\\mathbb E[\\sum_t r_t+\\alpha\\mathcal H(\\pi(\\cdot\\mid s_t))]\\)다. 온도 \\(\\alpha\\)가 보상과 엔트로피의 상대 비중을 정한다. SAC는 탐험을 정책 분포 안에 넣지만, 엔트로피가 항상 유익한 것은 아니며 학습 후 평가 시 샘플링 또는 평균 행동을 어떻게 사용할지도 정해야 한다.",
     "sources": [
       [
         "Lillicrap et al., DDPG",
@@ -459,7 +459,7 @@
         "from": 13,
         "to": 19,
         "label": "DDPG의 actor–critic 업데이트",
-        "note": "critic은 Bellman target에 회귀하고 actor는 critic의 행동 기울기를 따라 Q를 높인다. actor gradient는 \\(Q(s,\\mu_\theta(s))\\)에 chain rule을 적용한 것이다. action exploration noise는 행동 수집용이며 정책 분포의 entropy와는 구분된다. soft target update는 \\(\bar\\phi\\leftarrow(1-\tau)\bar\\phi+\tau\\phi\\)처럼 천천히 추적한다."
+        "note": "critic은 Bellman target에 회귀하고 actor는 critic의 행동 기울기를 따라 Q를 높인다. actor gradient는 \\(Q(s,\\mu_\\theta(s))\\)에 chain rule을 적용한 것이다. action exploration noise는 행동 수집용이며 정책 분포의 entropy와는 구분된다. soft target update는 \\(\\bar\\phi\\leftarrow(1-\\tau)\\bar\\phi+\\tau\\phi\\)처럼 천천히 추적한다."
       },
       {
         "from": 20,
@@ -537,7 +537,7 @@
     "title": "Offline RL: 정적 데이터에서 정책 개선",
     "short": "분포 이동을 다루는 보수적 학습",
     "color": "blue",
-    "intro": "Offline RL은 고정된 데이터셋 \\(\\mathcal D=\\{(s,a,r,s')\\}\\)만으로 정책을 학습한다. 위험하거나 비싼 환경에서 새 상호작용을 피하고 과거 데이터를 재사용할 수 있다. 행동 복제와 달리 보상을 사용해 데이터에 있는 행동보다 나은 정책을 찾으려 한다. 어려움은 최적화된 정책이 데이터에 거의 없던 행동을 선택하고, 그 행동의 Q값을 신경망이 근거 없이 크게 예측하는 데서 생긴다. 이를 distribution shift와 extrapolation error라고 한다.\n\n일반 off-policy Q-learning target \\(r+\\gamma\\max_{a'}Q(s',a')\\)는 데이터에 없는 다음 행동을 최대화할 수 있다. 과대평가된 OOD 행동은 max 연산으로 선택되기 쉽고, bootstrapping으로 그 오류가 다음 상태들에 전파된다. 데이터에 가까운 정책을 유지하는 TD3+BC, OOD Q를 낮추는 보수적 Q-learning(CQL), 좋은 궤적만 모방하는 filtered BC, advantage에 비례해 행동을 가중하는 AWR가 서로 다른 완화책이다.\n\nCQL은 Bellman 오차에 데이터 밖 행동의 Q를 낮추는 정규화 항을 추가한다. 이산 행동에서 entropy regularizer를 포함한 최적화는 log-sum-exp 항 \\(\\log\\sum_a\\exp Q(s,a)\\)으로 정리된다. 이 항은 큰 Q를 주는 행동에 특히 민감하며, 데이터 행동의 값과 비교해 OOD 영역의 과도한 낙관성을 누른다. 너무 강하면 과도하게 비관적이어서 정책 개선을 막는다.\n\nIQL은 학습 중 데이터 밖 행동에 Q를 질의하지 않도록 설계한다. 데이터 행동들의 Q 분포에서 expectile regression으로 좋은 행동 쪽의 상태가치 \\(V(s)\\)를 맞추고, 이를 TD target으로 Q를 학습한 뒤 advantage-weighted behavioral cloning으로 정책을 추출한다. expectile \\(\tau>0.5\\)는 큰 잔차에 더 큰 가중을 주어 상위 행동의 가치를 추정한다. 이는 데이터 밖 행동값을 직접 평가하지 않는다는 뜻이지, 데이터가 전혀 담지 않은 전략을 보장된 방식으로 발명한다는 뜻은 아니다.",
+    "intro": "Offline RL은 고정된 데이터셋 \\(\\mathcal D=\\{(s,a,r,s')\\}\\)만으로 정책을 학습한다. 위험하거나 비싼 환경에서 새 상호작용을 피하고 과거 데이터를 재사용할 수 있다. 행동 복제와 달리 보상을 사용해 데이터에 있는 행동보다 나은 정책을 찾으려 한다. 어려움은 최적화된 정책이 데이터에 거의 없던 행동을 선택하고, 그 행동의 Q값을 신경망이 근거 없이 크게 예측하는 데서 생긴다. 이를 distribution shift와 extrapolation error라고 한다.\n\n일반 off-policy Q-learning target \\(r+\\gamma\\max_{a'}Q(s',a')\\)는 데이터에 없는 다음 행동을 최대화할 수 있다. 과대평가된 OOD 행동은 max 연산으로 선택되기 쉽고, bootstrapping으로 그 오류가 다음 상태들에 전파된다. 데이터에 가까운 정책을 유지하는 TD3+BC, OOD Q를 낮추는 보수적 Q-learning(CQL), 좋은 궤적만 모방하는 filtered BC, advantage에 비례해 행동을 가중하는 AWR가 서로 다른 완화책이다.\n\nCQL은 Bellman 오차에 데이터 밖 행동의 Q를 낮추는 정규화 항을 추가한다. 이산 행동에서 entropy regularizer를 포함한 최적화는 log-sum-exp 항 \\(\\log\\sum_a\\exp Q(s,a)\\)으로 정리된다. 이 항은 큰 Q를 주는 행동에 특히 민감하며, 데이터 행동의 값과 비교해 OOD 영역의 과도한 낙관성을 누른다. 너무 강하면 과도하게 비관적이어서 정책 개선을 막는다.\n\nIQL은 학습 중 데이터 밖 행동에 Q를 질의하지 않도록 설계한다. 데이터 행동들의 Q 분포에서 expectile regression으로 좋은 행동 쪽의 상태가치 \\(V(s)\\)를 맞추고, 이를 TD target으로 Q를 학습한 뒤 advantage-weighted behavioral cloning으로 정책을 추출한다. expectile \\(\\tau>0.5\\)는 큰 잔차에 더 큰 가중을 주어 상위 행동의 가치를 추정한다. 이는 데이터 밖 행동값을 직접 평가하지 않는다는 뜻이지, 데이터가 전혀 담지 않은 전략을 보장된 방식으로 발명한다는 뜻은 아니다.",
     "sources": [
       [
         "Fu et al., D4RL",
@@ -599,13 +599,13 @@
         "from": 26,
         "to": 30,
         "label": "Filtered BC와 AWR",
-        "note": "Filtered BC는 trajectory return으로 상위 데이터를 고른 뒤 모방하므로 보상 크기 순위만 이용한다. AWR은 \\(\\exp(A/\beta)\\)로 transition별 log-likelihood를 가중해 상대적인 이득을 활용한다. 온도 \\(\beta\\)가 작으면 상위 사례에 집중하지만 작은 추정오차에 민감해진다."
+        "note": "Filtered BC는 trajectory return으로 상위 데이터를 고른 뒤 모방하므로 보상 크기 순위만 이용한다. AWR은 \\(\\exp(A/\\beta)\\)로 transition별 log-likelihood를 가중해 상대적인 이득을 활용한다. 온도 \\(\\beta\\)가 작으면 상위 사례에 집중하지만 작은 추정오차에 민감해진다."
       },
       {
         "from": 31,
         "to": 35,
         "label": "IQL과 expectile 회귀",
-        "note": "SARSA식 target은 데이터에 저장된 다음 행동을 사용해 greedy OOD 행동을 평가하지 않는다. IQL의 expectile 손실은 잔차 \\(u=Q-V\\)의 부호에 따라 \\(\tau u^2\\) 또는 \\((1-\tau)u^2\\)를 적용한다. \\(\tau>0.5\\)면 높은 Q 표본이 V를 위쪽으로 끌어올리고, advantage weight가 큰 데이터 행동을 정책이 더 잘 모방한다."
+        "note": "SARSA식 target은 데이터에 저장된 다음 행동을 사용해 greedy OOD 행동을 평가하지 않는다. IQL의 expectile 손실은 잔차 \\(u=Q-V\\)의 부호에 따라 \\(\\tau u^2\\) 또는 \\((1-\\tau)u^2\\)를 적용한다. \\(\\tau>0.5\\)면 높은 Q 표본이 V를 위쪽으로 끌어올리고, advantage weight가 큰 데이터 행동을 정책이 더 잘 모방한다."
       },
       {
         "from": 36,
@@ -616,3 +616,5 @@
     ]
   }
 ]
+
+
