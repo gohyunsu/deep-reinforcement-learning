@@ -150,7 +150,7 @@ function writeDerivations(){
  const body='<main class="derivation-main"><a class="sidebar-home" href="index.html">← 전체 목차</a><div class="eyebrow">수식 전개 노트</div>'+mathHtml(md)+'<footer class="site-footer"><a href="index.html">학습 경로로 돌아가기</a></footer></main>';
  fs.writeFileSync(path.join(docs,'derivations.html'),shell('수식 유도',body,''),'utf8');
 }
-function texEscape(s){return s.replace(/[\\{}%&#_^~]/g,c=>({'\\':'\\textbackslash{}','{':'\\{','}':'\\}','%':'\\%','&':'\\&','#':'\\#','_':'\\_','^':'\\^{}','~':'\\~{}'}[c]));}
+function texEscape(s){return s.replace(/[\\{}%&#_^~$]/g,c=>({'\\':'\\textbackslash{}','{':'\\{','}':'\\}','%':'\\%','&':'\\&','#':'\\#','_':'\\_','^':'\\^{}','~':'\\~{}','$':'\\$'}[c]));}
 function texUrl(s){return s.replaceAll('&','\\&').replaceAll('%','\\%');}
 function texInline(s){
  let out='',i=0;while(i<s.length){
