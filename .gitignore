@@ -1,0 +1,17 @@
+/slides/
+/scripts/
+/notes/
+/exams/
+/.research/
+/node_modules/
+/guide/*.aux
+/guide/*.log
+/guide/*.out
+/guide/*.toc
+/guide/*.synctex.gz
+/guide/*.pdf
+/guide/*.zip
+/tmp/
+.DS_Store
+/assignments/
+**/.venv/

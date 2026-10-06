@@ -1,0 +1,1235 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=23mm]{geometry}
+\usepackage{kotex,amsmath,amssymb,longtable,array,xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
+\setlength{\parindent}{0pt}\setlength{\parskip}{0.5em}\setcounter{tocdepth}{2}
+\begin{document}
+\begin{titlepage}\centering\vspace*{3cm}{\Large Deep Reinforcement Learning\par}\vspace{1cm}{\Huge\bfseries 슬라이드별 학습 가이드\par}\vspace{1cm}{\large 순차적 의사결정에서 오프라인 학습까지\par}\vfill{\large 2026년 2학기\par}\end{titlepage}\tableofcontents\clearpage
+\section{01-1 · Deep RL의 문제와 응용}
+이 장은 강화학습을 ‘정답 라벨을 맞히는 학습’이 아니라, 행동이 환경을 바꾸고 그 결과가 다음 결정의 조건이 되는 \textbf{순차적 의사결정}으로 소개한다. 지도학습이 관측과 정답의 대응을 배우는 데 강하다면, 강화학습은 행동의 결과를 보상으로 평가하고 장기적인 결과를 고려한다. 로봇 제어, 게임, 칩 설계, 대화형 시스템처럼 지금의 선택이 미래 상태와 이후 선택의 질을 바꾸는 문제에서 이 관점이 필요하다.\par
+\par\medskip
+강화학습의 학습 신호는 대개 행동마다 정답 행동을 알려 주지 않는다. 에이전트는 정책을 통해 행동을 고르고, 환경은 다음 상태와 보상을 반환한다. 따라서 “무엇을 예측하는가?”보다 “어떤 경험이 어떤 정책을 더 낫게 만드는가?”가 핵심 질문이다. 이어지는 강의는 이 질문을 모방학습, MDP, 정책경사, 가치함수, off-policy와 offline RL로 구체화한다.\par
+\subsection{강의의 문제 설정}
+강화학습이라는 분야의 이름보다 먼저 기억할 것은 입력·행동·결과가 반복되는 루프다. 보상은 정답 행동의 라벨이 아니라 결과를 평가하는 숫자다. 같은 행동도 상태와 이후 결과에 따라 가치가 달라질 수 있다.\par
+\subsection{순차 결정과 강의 범위}
+여러 결정이 연결되면 현재 행동의 가치는 미래 상태를 통해서도 나타난다. 강의의 중심은 에이전트가 환경과 상호작용해 정책을 학습하는 방법이며, imitation learning과 model-free/model-based, online/offline 분류는 서로 다른 축이다.\par
+\subsection{선수 지식과 학습 경로}
+확률과 미적분은 확률적 정책의 기대 보상을 미분할 때, 선형대수와 역전파는 함수근사기를 학습할 때 쓰인다. 각 알고리즘을 외우기보다 데이터 수집 방식, 목적함수, 편향·분산, 안정성을 연결해 두면 뒤의 구현 선택이 이해된다.\par
+\subsection{왜 강화학습인가: 응용 사례}
+정확도처럼 미분 가능한 정답 손실로 목표를 표현하기 어려울 때, 성공 여부·선호·비용 같은 결과 신호로 최적화할 수 있다. AlphaGo의 탐색과 학습, 로봇의 물리적 피드백, 언어모델의 선호 최적화는 모두 같은 루프를 공유하지만 환경·보상·데이터 위험은 서로 다르다. 국내 사례로 KAIST의 APT-RL은 시뮬레이션에서 걷기·달리기·점프 기술을 사전 학습한 뒤, 실제 사족보행 로봇이 계단과 틈 같은 복합 지형에서 보행 기술을 자율적으로 전환하도록 강화학습과 온보드 인지를 결합한다. 이는 보상으로 제어를 개선하는 RL과 대규모 동작 시연으로 초기 행동을 배우는 모방학습이 상호보완적임을 보여 준다.\par
+\subsection{핵심 질문 정리}
+강화학습은 모든 문제에 더 좋은 범용 학습법이라는 뜻이 아니다. 정답 데이터가 충분하고 목표가 예측이면 지도학습이 더 간단할 수 있다. 행동이 미래를 바꾸고 경험을 통해 목표를 개선해야 하는지 먼저 따져야 한다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://incompleteideas.net/book/the-book-2nd.html}{Sutton \& Barto, Reinforcement Learning: An Introduction}
+\item \href{https://doi.org/10.1145/3453688.3461744}{Roy et al., PrefixRL}
+\item \href{https://arxiv.org/abs/2305.13301}{Black et al., Training Diffusion Models with Reinforcement Learning}
+\item \href{https://www.kaist.ac.kr/newsen/html/news/?GotoPage=1\&mng_no=64450\&mode=V\&skey=keyword\&sval=robot}{KAIST, APT-RL 실제 사족보행 로봇 연구}
+\end{itemize}
+\subsubsection{슬라이드 01 · Deep Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Disclaimer}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 03 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 04 · What is reinforcement learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 05 · What is reinforcement learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 06 · What is reinforcement learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 07 · What is reinforcement learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 08 · We can cover everything in RL. We focus on}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 09 · What you will learn}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 10 · Course overview}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 11 · Prerequisites}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · Grading policy}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 13 · Homework (35\%)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 14 · Warnings!}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 15 · Midterm and ffinal exams (30\% each)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 16 · Attendance (3\%)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 17 · Participation (2\%)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 18 · Information \& Resources}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 19 · References}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 20 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 21 · How close are we to AGI?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 22 · Breakthrough in AI (for me)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 23 · Breakthrough in AI (for you?)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 24 · Supervised learning looks great!}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 25 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 26 · K rp thy. t te of GPT Microsoft Build 2023 26}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 27 · Bl ck et l. r ining Di usion Models with Reinforcement Le rning ICLR 2024 2}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 28 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 29 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 30 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 31 · Why study reinforcement learning?}
+질문형 제목에 답할 때 가정과 실패 모드를 먼저 적고, 다음 페이지의 해결책이 어떤 문제를 줄이는지 비교합니다.\par
+\subsubsection{슬라이드 32 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{01-2 · Imitation learning과 로봇 정책}
+모방학습(imitation learning)은 전문가의 행동 예시에서 정책을 배우는 방법이다. 가장 단순한 행동 복제(behavioral cloning, BC)는 데이터 $\mathcal D=\{(s_i,a_i)\}$를 지도학습으로 처리한다. 이 접근은 정답 행동을 수집할 수 있는 로봇 조작·자율주행·인터페이스 문제에서 효과적이며, 보상 설계 없이 빠르게 출발할 수 있다. 하지만 학습 상태 분포와 실제 정책이 방문하는 상태 분포가 달라지면 작은 오차가 누적된다.\par
+\par\medskip
+행동 오차가 상태를 바꾸고, 바뀐 상태에서 다시 잘못된 행동을 내면 오류가 연쇄적으로 커진다. DAgger는 학습된 정책이 방문한 상태에서 전문가의 교정 행동을 받아 데이터에 추가해 이 분포 이동을 완화한다. 다중 모드 시연에서는 평균 제곱 오차가 서로 다른 유효 행동의 평균을 만들어 무효 행동을 낼 수 있으므로 확률적·표현력 있는 정책이 필요하다. ALOHA/ACT, Mobile ALOHA, Diffusion Policy, 로봇 데이터셋과 VLA 사례는 데이터 규모·행동 표현·일반화가 실제 시스템에서 왜 중요한지 보여 준다.\par
+\par\medskip
+\textbf{행동 복제 손실의 출발점.} 이산 행동에서 정책은 범주분포 $\pi_	heta(a\mid s)$이고, 음의 로그우도는\par
+\par\medskip
+\begin{equation*}
+\mathcal L_{BC}(	heta)=-rac1N\sum_{i=1}^N\log\pi_	heta(a_i\mid s_i).
+\end{equation*}
+\par\medskip
+연속 행동에서는 흔히 정책이 평균과 공분산을 출력하는 정규분포를 두고 같은 우도 목적을 쓴다. 평균 제곱 오차는 등분산 Gaussian 우도의 특수한 형태다. 이 손실이 직접 최적화하는 것은 관측된 상태에서의 행동 예측이며, 장기 누적 보상의 극대화와 같지는 않다.\par
+\subsection{정책과 행동 복제}
+정책 $\pi(a\mid s)$는 상태에서 행동을 고르는 규칙이다. BC는 expert label이 있는 지도학습으로 이 규칙을 근사한다. 분류에는 cross-entropy, 연속 제어에는 likelihood 또는 회귀 손실을 쓰되, 라벨의 행동이 유일한 정답이라는 가정이 숨어 있는지 확인한다.\par
+\subsection{시연 수집}
+사람 운전 기록처럼 자연스럽게 쌓인 데이터, 로봇의 kinesthetic teaching, 원격조종, puppeteering은 비용·시야·제어 정밀도·시연자 안전성이 다르다. 좋은 데이터는 단순히 많기만 한 것이 아니라 에이전트가 실제로 볼 관측과 같은 조건에서 수집되어야 한다.\par
+\subsection{BC가 실패하는 세 가지 이유}
+covariate shift는 훈련 시 입력 분포와 배포 시 입력 분포의 차이다. compounding error는 그 차이가 정책 행동을 통해 시간에 따라 증폭되는 현상이다. 서로 다른 성공 전략을 평균내는 multimodal 오류, 전문가에게만 보이는 정보가 있는 observability mismatch도 별개의 문제다.\par
+\subsection{DAgger의 교정 루프}
+학습 정책을 실행해 방문 상태를 모으고, 그 상태에서 전문가 행동을 질의한 뒤 기존 데이터와 합쳐 정책을 재학습한다. 정책이 만든 상태 분포를 학습 분포에 반영한다는 것이 핵심이다. 실제로는 전문가 질의 비용과 안전한 개입 설계가 병목이 된다.\par
+\subsection{ALOHA와 ACT}
+저가 양팔 로봇과 원격조종으로 반복 가능한 시연을 수집하고, ACT는 여러 미래 관절 목표를 action chunk로 예측해 시간적 일관성을 높인다. 단일 프레임에서 한 순간의 행동만 예측할 때보다 여러 단계의 행동을 묶는 것이 제어 지연과 고주파 흔들림을 줄일 수 있다. 국내 비교 사례인 KAIST APT-RL은 여러 보행 skill을 사전 준비하고 강화학습으로 환경에 맞는 전환을 익힌다. ALOHA/ACT가 양팔 조작의 시연 데이터와 action chunk에 초점을 두는 것과 달리, 이 사례는 사족보행 skill의 선택·전환과 실제 거친 지형 일반화를 강조한다.\par
+\subsection{Diffusion Policy}
+조건부 확산 정책은 잡음에서 출발해 관측에 맞는 행동 시퀀스를 반복적으로 복원한다. 한 상태에 가능한 여러 유효 행동 모드를 하나의 평균으로 뭉개지 않고 샘플링할 수 있다. 표현력의 대가로 추론 반복 횟수와 데이터·계산 요구량이 증가한다.\par
+\subsection{대규모 로봇 데이터와 VLA}
+Open X-Embodiment, DROID 같은 다기관 데이터는 로봇·센서·행동 공간의 이질성을 포함한다. 데이터 양이 늘면 일반화 가능성이 커지지만, 좌표계·행동 단위·카메라·과업 정의를 맞추지 않으면 같은 라벨이 다른 의미를 갖는다. VLA는 언어와 시각 조건을 행동 생성에 연결한다.\par
+\subsection{모방학습의 역할}
+모방학습은 강력한 초기 정책이자 데이터 효율적인 방법이다. 그러나 전문가 데이터보다 더 나은 행동을 찾으려면 보상 또는 선호 신호와 추가 상호작용이 필요하다. 정책 품질을 평가할 때 훈련 손실만 보지 말고 새로운 초기 조건에서 실제 성공률을 측정한다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://proceedings.mlr.press/v15/ross11a.html}{Ross et al., DAgger}
+\item \href{https://arxiv.org/abs/2304.13705}{Zhao et al., ACT / ALOHA}
+\item \href{https://arxiv.org/abs/2303.04137}{Chi et al., Diffusion Policy}
+\item \href{https://droid-dataset.github.io/}{DROID robot manipulation dataset}
+\item \href{https://pure.kaist.ac.kr/en/publications/agile-perceptive-multiskill-locomotion-for-quadrupedal-robots-in-/}{KAIST, APT-RL 보행 기술}
+\end{itemize}
+\subsubsection{슬라이드 01 · Deep Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Reinforcement learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 03 · What is reinforcement learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 04 · Decision making problem}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 05 · Basic terminologies}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 06 · Supervised Learning vs. Reinforcement Learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 07 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 08 · Behavioral cloning (BC)}
+전문가 상태–행동 쌍을 조건부 정책의 supervised label로 취급합니다. 손실이 맞추는 것은 데이터에 등장한 행동이며, 누적 return을 직접 최적화하는 것은 아닙니다.\par
+\subsubsection{슬라이드 09 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 10 · How to collect demonstrations?}
+시연 수집 방식마다 사람이 보거나 조종하는 정보와 로봇이 받는 관측이 달라집니다. 훈련·실행의 센서와 좌표계를 맞출 수 있는지 확인합니다.\par
+\subsubsection{슬라이드 11 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 12 · What can go wrong in imitation learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 13 · 1. Compounding errors}
+한 번의 작은 행동 편차가 전문가 데이터에 없는 상태로 이동시키고, 그 상태의 추가 오차가 다시 다음 상태를 밀어냅니다. 시간 지평이 길수록 오차가 누적될 수 있습니다.\par
+\subsubsection{슬라이드 14 · 1. Compounding errors}
+한 번의 작은 행동 편차가 전문가 데이터에 없는 상태로 이동시키고, 그 상태의 추가 오차가 다시 다음 상태를 밀어냅니다. 시간 지평이 길수록 오차가 누적될 수 있습니다.\par
+\subsubsection{슬라이드 15 · 2. Multimodal demonstration data}
+서로 다른 두 행동이 모두 성공 전략일 수 있습니다. 평균 회귀 정책은 두 전략 사이의 잘못된 중간 행동을 낼 수 있어 확률분포가 다봉형인지 살핍니다.\par
+\subsubsection{슬라이드 16 · 3. Mismatch in observability between expert \& agent}
+전문가가 관측한 정보가 정책 입력에서 빠지면, 동일한 입력에 서로 다른 정답 행동이 생깁니다. 데이터 양보다 입력 정보의 일치가 먼저입니다.\par
+\subsubsection{슬라이드 17 · What can go wrong in imitation learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 18 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 19 · Addressing Compounding Errors with DAgger}
+한 번의 작은 행동 편차가 전문가 데이터에 없는 상태로 이동시키고, 그 상태의 추가 오차가 다시 다음 상태를 밀어냅니다. 시간 지평이 길수록 오차가 누적될 수 있습니다.\par
+\subsubsection{슬라이드 20 · Addressing Compounding Errors with DAgger}
+한 번의 작은 행동 편차가 전문가 데이터에 없는 상태로 이동시키고, 그 상태의 추가 오차가 다시 다음 상태를 밀어냅니다. 시간 지평이 길수록 오차가 누적될 수 있습니다.\par
+\subsubsection{슬라이드 21 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 22 · ALOHA system and ACT algorithm}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 23 · Tot l cost: <$20k}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 24 · ACT: Imitation learning algorithm}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 25 · ACT: Imitation learning algorithm}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 26 · ACT: Imitation learning algorithm}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 27 · ACT: Imitation learning algorithm}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 28 · 50 demos}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 29 · 50 demos}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 30 · Mobile ALOHA}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 31 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 32 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 33 · Diffusion Policy}
+조건부 확산 정책은 잡음에서 시작해 관측에 맞는 행동 시퀀스로 반복 복원합니다. 다봉 행동을 표현하는 이점과 추론 단계·계산량 사이의 비용을 비교합니다.\par
+\subsubsection{슬라이드 34 · What can go wrong in imitation learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 35 · Model policy using diffusion process}
+조건부 확산 정책은 잡음에서 시작해 관측에 맞는 행동 시퀀스로 반복 복원합니다. 다봉 행동을 표현하는 이점과 추론 단계·계산량 사이의 비용을 비교합니다.\par
+\subsubsection{슬라이드 36 · Results}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 37 · Robotic Foundation Model (RFM)}
+다기관 로봇 데이터는 로봇 형상·카메라·행동 단위가 달라집니다. 통합 전에 좌표계와 과업 라벨을 정규화해야 공통 정책이 같은 동작을 학습합니다.\par
+\subsubsection{슬라이드 38 · Large-scale robot dataset}
+다기관 로봇 데이터는 로봇 형상·카메라·행동 단위가 달라집니다. 통합 전에 좌표계와 과업 라벨을 정규화해야 공통 정책이 같은 동작을 학습합니다.\par
+\subsubsection{슬라이드 39 · Open X-Embodiment dataset (OXE)}
+다기관 로봇 데이터는 로봇 형상·카메라·행동 단위가 달라집니다. 통합 전에 좌표계와 과업 라벨을 정규화해야 공통 정책이 같은 동작을 학습합니다.\par
+\subsubsection{슬라이드 40 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 41 · 0: Vision-Language-Aaction model (VLA)}
+ACT의 action chunk는 한 프레임의 단일 관절 명령 대신 가까운 미래 행동 묶음을 예측합니다. 시간적으로 일관된 실행과 여러 가능한 시연의 압축이 핵심입니다.\par
+\subsubsection{슬라이드 42 · Details about pi\_0}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 43 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 44 · We need data}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 45 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 46 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 47 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 48 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 49 · Is imitation learning all you need?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 50 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{02-1 · MDP와 순차적 의사결정}
+Markov decision process(MDP)는 강화학습 문제를 $(\mathcal S,\mathcal A,P,r,\gamma,ho_0)$로 표현한다. 상태 $s$와 행동 $a$, 전이확률 $P(s'\mid s,a)$, 보상 $r(s,a)$, 할인율 $\gamma$, 초기 상태 분포 $ho_0$가 환경과 목표를 정의한다. 정책 $\pi(a\mid s)$는 에이전트의 행동 규칙이다. MDP의 Markov 가정은 현재 상태를 알면 미래가 과거 전체에 추가로 의존하지 않는다는 조건이다. 관측만으로 충분한 상태를 만들지 못하면 관측 기반 정책이나 belief state가 필요하다.\par
+\par\medskip
+보상의 합을 최적화한다고 해서 매 시점의 보상을 탐욕적으로 고르면 되는 것은 아니다. 현재 행동은 전이확률을 바꾸어 미래 보상의 분포까지 바꾸므로 기대 누적 보상을 비교해야 한다. 유한 지평에서는 종료 시점까지 합하고, 무한 지평에서는 할인합 $G_t=\sum_{k=0}^{\infty}\gamma^k r_{t+k}$를 자주 쓴다. $\gamma$가 1에 가까울수록 먼 미래를 더 중시하지만 추정 난도와 분산도 커진다.\par
+\par\medskip
+\textbf{기대값에서 Bellman 식으로.} 상태가치의 정의는 $V^\pi(s)=\mathbb E_\pi[G_t\mid s_t=s]$다. 반환을 첫 보상과 나머지 반환으로 분리하면 $G_t=r_t+\gamma G_{t+1}$이고, 조건부 기대값의 선형성으로\par
+\par\medskip
+\begin{equation*}
+V^\pi(s)=\mathbb E_{a\sim\pi,\,s'\sim P}[r(s,a)+\gamma V^\pi(s')].
+\end{equation*}
+\par\medskip
+같은 논리에서 $Q^\pi(s,a)=\mathbb E[r+\gamma V^\pi(s')]$이며 $V^\pi(s)=\mathbb E_{a\sim\pi}[Q^\pi(s,a)]$다. 최적 가치에서는 정책의 평균 대신 가능한 행동 중 최대를 취해 Bellman optimality equation을 얻는다. 예시의 숫자를 계산할 때는 전이확률의 합이 1인지, terminal state 이후 가치를 0으로 두었는지 확인한다.\par
+\subsection{복습과 문제 형식화}
+행동·상태를 정했으면 시간 순서와 보상이 언제 관측되는지 고정한다. 같은 이름의 상태라도 환경을 예측하는 데 과거 정보가 필요하면 Markov state가 아니다. 로봇의 위치·속도처럼 필요한 이력을 상태에 포함하거나 확률적 belief로 요약할 수 있다.\par
+\subsection{Markov 과정과 Markov 성질}
+Markov chain은 상태 전이만 있는 확률 과정이고, Markov reward process는 여기에 보상과 할인 목표를 추가한다. MDP는 에이전트가 선택하는 행동과 정책을 더한다. ‘Markov’는 과정이 기억이 없다는 뜻이 아니라 현재 상태가 예측에 충분한 통계량이라는 뜻이다.\par
+\subsection{작은 상태 공간에서 기대값 계산}
+전이 그래프 예시는 경로별 보상을 확률로 가중해 기대 반환을 계산하게 한다. 여러 경로가 합쳐지는 상태에서는 각 경로의 확률질량을 더한다. 보상 표기와 상태가치 표기를 구분하고, terminal 상태에는 추가 미래 보상이 없음을 명시한다.\par
+\subsection{정책과 Bellman 방정식}
+정책을 고정하면 상태가치 식은 선형 기대값 관계가 된다. 최적 정책을 구하면 행동 축의 max가 들어가며 식이 비선형이 된다. 이 평균과 최대의 차이가 policy evaluation과 control, on-policy와 off-policy 알고리즘의 중요한 구분으로 이어진다.\par
+\subsection{로봇·게임·대화 예시}
+Ant 제어는 연속 상태·연속 행동, 게임은 큰 이산 행동·장기 전략, 챗봇은 긴 문맥과 지연된 품질 신호를 갖는다. 이들을 같은 MDP 표기로 쓸 수 있지만 상태 표현, 보상 희소성, 전이 비용은 알고리즘 선택을 바꾼다.\par
+\subsection{용어 정리}
+trajectory는 정책과 환경의 상호작용으로 생성된 상태·행동·보상 열이다. episode는 명시적 종료가 있는 경우고, continuing task는 임의 시점에서 끊어 관찰하더라도 개념상 계속된다. 종료와 시간 제한(truncation)을 섞으면 bootstrapping target이 달라진다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://incompleteideas.net/book/the-book-2nd.html}{Sutton \& Barto, Markov decision processes}
+\item \href{https://gymnasium.farama.org/}{Gymnasium documentation}
+\item \href{https://arxiv.org/abs/1801.00690}{DeepMind Control Suite}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 03 · Grading policy}
+정책은 상태에서 행동 분포를 지정합니다. 결정론 정책은 한 행동을 택하고 확률론 정책은 탐색 및 여러 동작 모드를 표현합니다.\par
+\subsubsection{슬라이드 04 · Midterm and ffinal exams (30\% each)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 05 · Attendance (3\%)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 06 · Participation (2\%)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 07 · Information \& Resources}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 08 · References}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 09 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 10 · Decision making problem}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 11 · Behavioral cloning (BC)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · What can go wrong in imitation learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 13 · Addressing Compounding Errors with DAgger}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 14 · Addressing Compounding Errors with DAgger}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 15 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 16 · What is reinforcement learning?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 17 · How can we formalize RL problems?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 18 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 19 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 20 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 21 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 22 · Example of Markov Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 23 · Markov Reward Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 24 · Example of Markov Reward Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 25 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 26 · Example of Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 27 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 28 · Policy}
+정책은 상태에서 행동 분포를 지정합니다. 결정론 정책은 한 행동을 택하고 확률론 정책은 탐색 및 여러 동작 모드를 표현합니다.\par
+\subsubsection{슬라이드 29 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 30 · Example of Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 31 · Examples of states and actions}
+예시의 각 경로 확률을 전이확률의 곱으로 계산하고, 경로별 반환을 확률로 가중해 상태가치를 구합니다. 합류 상태에서 경로 확률을 빠뜨리지 않습니다.\par
+\subsubsection{슬라이드 32 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 33 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 34 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 35 · Markov Decision Process}
+Markov 성질은 과거가 사라진다는 뜻이 아니라 현재 상태가 미래 예측에 충분한 정보라는 모델링 가정입니다. 상태 표현에서 빠진 속도나 문맥이 없는지 따져 봅니다.\par
+\subsubsection{슬라이드 36 · RL example \#1: Ant}
+예시의 각 경로 확률을 전이확률의 곱으로 계산하고, 경로별 반환을 확률로 가중해 상태가치를 구합니다. 합류 상태에서 경로 확률을 빠뜨리지 않습니다.\par
+\subsubsection{슬라이드 37 · RL example \#2: League of Legends}
+예시의 각 경로 확률을 전이확률의 곱으로 계산하고, 경로별 반환을 확률로 가중해 상태가치를 구합니다. 합류 상태에서 경로 확률을 빠뜨리지 않습니다.\par
+\subsubsection{슬라이드 38 · RL example \#3: Robot}
+예시의 각 경로 확률을 전이확률의 곱으로 계산하고, 경로별 반환을 확률로 가중해 상태가치를 구합니다. 합류 상태에서 경로 확률을 빠뜨리지 않습니다.\par
+\subsubsection{슬라이드 39 · RL example \#4: ChatBot}
+예시의 각 경로 확률을 전이확률의 곱으로 계산하고, 경로별 반환을 확률로 가중해 상태가치를 구합니다. 합류 상태에서 경로 확률을 빠뜨리지 않습니다.\par
+\subsubsection{슬라이드 40 · Basic terminologies}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 41 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{02-2 · Policy gradient와 REINFORCE}
+정책경사는 행동을 직접 고르는 정책 $\pi_	heta(a\mid s)$의 기대 성능 $J(	heta)=\mathbb E_{	au\sim\pi_	heta}[R(	au)]$을 미분한다. trajectory 확률에는 환경 전이도 포함되지만, 환경 미분이 불가능해도 score-function identity로 정책 매개변수에 대한 gradient를 얻는다.\par
+\par\medskip
+\textbf{로그미분 트릭의 유도.} 분포가 매개변수에 의존하는 기대값을 적분으로 쓰면\par
+\par\medskip
+\begin{equation*}
+
+abla_	heta J=
+abla_	heta\int p_	heta(	au)R(	au)d	au=\int p_	heta(	au)
+abla_	heta\log p_	heta(	au)R(	au)d	au.
+
+\end{equation*}
+\par\medskip
+따라서 \textbackslash{}(\par
+abla J=\textbackslash{}mathbb E[\par
+abla\textbackslash{}log p\_	heta(	au)R(	au)]\textbackslash{})다. trajectory 확률을 초기상태·정책·환경전이의 곱으로 분해하면 정책에 의존하는 항만 남아 \textbackslash{}(\textbackslash{}sum\_t\par
+abla\textbackslash{}log\textbackslash{}pi\_	heta(a\_t\textbackslash{}mid s\_t)\textbackslash{})가 된다. 이는 score-function estimator 또는 likelihood-ratio estimator다. 환경의 미분이 필요 없다는 장점이 있지만 반환 전체가 각 행동의 점수에 곱해져 분산이 크다.\par
+\par\medskip
+REINFORCE는 이 기대값을 실제 궤적 표본의 평균으로 근사해 경사 상승한다. Monte Carlo 반환은 편향이 작지만 분산이 크고, 업데이트 후에는 새 정책의 데이터를 다시 모아야 하는 on-policy 방법이다. 표본 수를 늘리면 독립 표본 가정 아래 평균 추정량의 표준오차는 대략 $1/\sqrt N$으로 줄지만 환경 상호작용 비용이 든다.\par
+\subsection{MDP 복습과 정책 목표}
+정책경사는 정책 매개변수를 직접 바꾸는 policy-based 방법이다. 목적은 단일 행동 라벨의 정확도가 아니라 정책이 환경에서 얻는 기대 반환이다. 상태·행동이 확률적이고 trajectory가 정책에 의해 선택된다는 점이 일반 지도학습의 고정 입력 분포와 다르다.\par
+\subsection{로그미분 유도}
+분포를 미분하는 대신 \textbackslash{}(\par
+abla p=p\par
+abla\textbackslash{}log p\textbackslash{})를 이용해 점수함수와 보상의 곱의 기댓값으로 바꾼다. 식의 순서를 따라 적분 → 미분 → 로그미분 항등식 → 표본 평균을 확인한다. 보상은 gradient를 만든다기보다 좋은 trajectory에 더 큰 가중치를 부여한다.\par
+\subsection{REINFORCE 추정량}
+trajectory 로그확률은 시간별 정책 로그확률의 합이다. 따라서 한 궤적의 return으로 모든 행동의 점수함수를 가중한다. 보상을 최대화하므로 gradient ascent를 쓰며, 손실 최소화 프레임워크에 넣을 때는 부호를 바꾸어 음의 목적함수를 최소화한다.\par
+\subsection{분산과 표본 수}
+gradient estimator가 unbiased여도 한 업데이트의 방향은 매우 noisy할 수 있다. 표본 수 증가는 분산을 낮추지만 시뮬레이터 호출 수를 늘린다. reward-to-go, baseline, 가치함수와 advantage는 같은 기대 gradient를 더 효율적으로 추정하려는 다음 강의의 도구다.\par
+\subsection{다음 연결}
+직접 정책을 최적화하는 것만으로는 데이터 재사용과 낮은 분산이 해결되지 않는다. 다음 단계에서는 정책의 점수에 곱할 신호를 반환에서 가치함수·advantage로 바꾸어 어느 행동이 기준보다 나았는지 추정한다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://doi.org/10.1007/BF00992696}{Williams, Simple statistical gradient-following algorithms for connectionist reinforcement learning}
+\item \href{https://papers.nips.cc/paper_files/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html}{Sutton et al., Policy Gradient Methods for Reinforcement Learning with Function Approximation}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 03 · Basic terminologies}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 04 · Reinforcement learning}
+표본 trajectory의 return으로 score function을 가중합니다. 기대값 수준에서는 맞는 경사지만, 한 표본의 반환이 모든 시간 행동에 곱해지는 분산 문제가 남습니다.\par
+\subsubsection{슬라이드 05 · Reinforcement learning}
+표본 trajectory의 return으로 score function을 가중합니다. 기대값 수준에서는 맞는 경사지만, 한 표본의 반환이 모든 시간 행동에 곱해지는 분산 문제가 남습니다.\par
+\subsubsection{슬라이드 06 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 07 · Solve RL problems like SL problems?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 08 · Solve RL problems like SL problems?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 09 · Direct policy differentiation}
+기대 return을 궤적 확률에 대한 적분으로 쓴 뒤, 확률밀도의 미분을 로그확률의 기울기로 바꿉니다. 환경 전이를 미분할 필요가 없다는 것이 이 전개의 결과입니다.\par
+\subsubsection{슬라이드 10 · Direct policy differentiation}
+기대 return을 궤적 확률에 대한 적분으로 쓴 뒤, 확률밀도의 미분을 로그확률의 기울기로 바꿉니다. 환경 전이를 미분할 필요가 없다는 것이 이 전개의 결과입니다.\par
+\subsubsection{슬라이드 11 · Policy gradient}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · REINFORCE}
+표본 trajectory의 return으로 score function을 가중합니다. 기대값 수준에서는 맞는 경사지만, 한 표본의 반환이 모든 시간 행동에 곱해지는 분산 문제가 남습니다.\par
+\subsubsection{슬라이드 13 · Summary of policy gradients}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 14 · Summary of policy gradients}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 15 · Policy gradient methods}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 16 · Why variance matters in policy gradient?}
+분산이 크면 같은 데이터에서도 업데이트 방향이 크게 달라집니다. 학습률만 낮추면 불안정성이 줄 수 있지만, 같은 성능에 더 많은 상호작용이 필요해질 수 있습니다.\par
+\subsubsection{슬라이드 17 · How to reduce variance of policy gradient?}
+분산이 크면 같은 데이터에서도 업데이트 방향이 크게 달라집니다. 학습률만 낮추면 불안정성이 줄 수 있지만, 같은 성능에 더 많은 상호작용이 필요해질 수 있습니다.\par
+\subsubsection{슬라이드 18 · Solution 1: Use very large N}
+독립 궤적 평균의 표준오차는 대략 표본 수의 제곱근에 반비례합니다. 표본 효율을 높이는 방법과 상호작용 수를 늘리는 방법을 구분합니다.\par
+\subsubsection{슬라이드 19 · Solution \#2: Use low-variance estimator}
+분산이 크면 같은 데이터에서도 업데이트 방향이 크게 달라집니다. 학습률만 낮추면 불안정성이 줄 수 있지만, 같은 성능에 더 많은 상호작용이 필요해질 수 있습니다.\par
+\subsubsection{슬라이드 20 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{03-1 · 가치함수와 Actor–Critic}
+정책경사에서 행동 $a_t$는 그 뒤의 보상에만 인과적으로 영향을 준다. 따라서 시점 $t$의 점수함수에 전체 episode return 대신 reward-to-go $G_t=\sum_{k=t}^{T}\gamma^{k-t}r_k$를 곱해도 기대 gradient는 유지하면서 무관한 과거 보상이 만드는 분산을 줄인다.\par
+\par\medskip
+상태가치 $V^\pi(s)=\mathbb E[G_t\mid s_t=s]$, 행동가치 $Q^\pi(s,a)=\mathbb E[G_t\mid s_t=s,a_t=a]$, advantage $A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)$는 서로 다른 질문에 답한다. 현재 상태가 평균적으로 좋은가(V), 이 행동을 선택했을 때 좋은가(Q), 같은 상태의 평균 행동보다 얼마나 나은가(A)다. 정책경사 정리에서는\par
+\par\medskip
+\begin{equation*}
+
+
+abla_	heta J=\mathbb E_{s,a\sim\pi_	heta}[
+abla_	heta\log\pi_	heta(a\mid s)Q^\pi(s,a)].
+
+\end{equation*}
+\par\medskip
+임의의 상태기반 baseline $b(s)$를 빼도 기대값이 바뀌지 않는다. 이유는 \textbackslash{}(\textbackslash{}mathbb E\_\{a\textbackslash{}sim\textbackslash{}pi\}[\par
+abla\textbackslash{}log\textbackslash{}pi(a\textbackslash{}mid s)b(s)]=b(s)\par
+abla\textbackslash{}sum\_a\textbackslash{}pi(a\textbackslash{}mid s)=0\textbackslash{})이기 때문이다. $b=V$를 택하면 advantage를 얻는다. baseline은 분산을 줄이지만 부정확한 근사치를 쓰면 variance 감소 폭이 작아질 수 있다.\par
+\par\medskip
+Actor–critic은 actor가 정책을, critic이 가치함수를 학습한다. critic이 trajectory return의 noisy label 대신 bootstrap target을 제공하면 표본 효율을 높일 수 있지만, critic 오차가 actor 업데이트에 편향을 전달한다. 작은 step을 여러 번 사용할지, 추정 편향을 얼마나 감수할지가 핵심 설계 선택이다.\par
+\subsection{정책경사 복습}
+trajectory 미분에서 시간별 정책 로그확률이 나타나는 이유를 다시 연결한다. 이번 장의 목표는 gradient 공식을 바꾸는 것이 아니라, 각 행동에 곱하는 return 신호의 분산을 낮추는 것이다.\par
+\subsection{기댓값과 reward-to-go}
+로그미분 항등식 \textbackslash{}(\par
+abla p=p\par
+abla\textbackslash{}log p\textbackslash{})와 tower property가 핵심이다. 미래 반환만 사용하는 것이 왜 unbiased인지 보이려면, 현재 행동과 무관한 과거 보상 항의 조건부 기댓값이 score의 평균 0과 곱해져 사라짐을 확인한다.\par
+\subsection{가치함수 정의와 Bellman 관계}
+Q는 첫 행동을 고정한 뒤 따르는 정책의 기대 반환이고, V는 정책 행동에 대해 Q를 평균한 값이다. TD 잔차 $\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)$는 한 단계 bootstrap target과 현재 예측의 차이다.\par
+\subsection{가치 추정과 할인}
+Monte Carlo는 실현 반환을 직접 맞추어 편향이 작지만 분산이 크다. TD는 다음 상태의 예측값으로 bootstrap해 분산을 낮추지만 critic 오차를 전달한다. $\gamma$는 미래를 얼마나 중시하는지 정하며, 단순히 수치 안정화 상수로만 보면 안 된다.\par
+\subsection{Baseline에서 advantage로}
+상태만의 함수인 baseline은 행동 평균을 바꾸지 않으므로 policy-gradient 기대값을 보존한다. $A=Q-V$는 절대 보상의 크기 대신 같은 상태에서의 상대적 이득을 준다. baseline을 action에도 의존하게 만들면 일반적으로 영기대 항등식이 깨질 수 있다.\par
+\subsection{Actor–critic의 데이터 흐름}
+actor는 \textbackslash{}(\par
+abla\textbackslash{}log\textbackslash{}pi\textbackslash{}) 방향으로 advantage가 큰 행동의 확률을 높이고, critic은 상태 또는 행동 가치를 회귀한다. on-policy actor–critic은 새 궤적을 계속 요구할 수 있고, critic 재사용은 효율과 추정 편향 사이의 절충이다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://incompleteideas.net/book/the-book-2nd.html}{Sutton \& Barto, Reinforcement Learning: An Introduction}
+\item \href{https://arxiv.org/abs/1506.02438}{Schulman et al., High-Dimensional Continuous Control Using Generalized Advantage Estimation}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 03 · Direct policy differentiation}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 04 · Direct policy differentiation}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 05 · Policy gradient}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 06 · Summary of policy gradient methods}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 07 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 08 · Useful math}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 09 · Score-function identity}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 10 · Reward to go:}
+현재 행동은 현재보다 앞선 보상을 원인적으로 바꾸지 않습니다. score의 조건부 평균이 0이므로 과거 보상 항을 제거해도 기대 정책경사는 보존됩니다.\par
+\subsubsection{슬라이드 11 · Reduce variance of policy gradient}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · Reduce variance of policy gradient}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 13 · Reduce variance of policy gradient}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 14 · Reduce variance of policy gradient}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 15 · Value functions}
+V는 상태에서 시작하는 기대 반환, Q는 현재 행동을 고정한 기대 반환입니다. Q를 정책 행동에 대해 평균하면 V가 된다는 관계를 확인합니다.\par
+\subsubsection{슬라이드 16 · Value functions}
+V는 상태에서 시작하는 기대 반환, Q는 현재 행동을 고정한 기대 반환입니다. Q를 정책 행동에 대해 평균하면 V가 된다는 관계를 확인합니다.\par
+\subsubsection{슬라이드 17 · Summary of alue}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 18 · Fit state value function}
+V는 상태에서 시작하는 기대 반환, Q는 현재 행동을 고정한 기대 반환입니다. Q를 정책 행동에 대해 평균하면 V가 된다는 관계를 확인합니다.\par
+\subsubsection{슬라이드 19 · Discount factor r1 r2 r3 r4 r5}
+할인율은 먼 미래 보상에 곱할 가중치입니다. 정의한 반환식에서 시간 인덱스에 따라 할인 지수가 어떻게 달라지는지 계산합니다.\par
+\subsubsection{슬라이드 20 · Discount factor}
+할인율은 먼 미래 보상에 곱할 가중치입니다. 정의한 반환식에서 시간 인덱스에 따라 할인 지수가 어떻게 달라지는지 계산합니다.\par
+\subsubsection{슬라이드 21 · Better estimate of reward to go:}
+현재 행동은 현재보다 앞선 보상을 원인적으로 바꾸지 않습니다. score의 조건부 평균이 0이므로 과거 보상 항을 제거해도 기대 정책경사는 보존됩니다.\par
+\subsubsection{슬라이드 22 · Q(st, at)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 23 · Q(st, at)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 24 · Baseline:}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 25 · Baseline}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 26 · Baseline}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 27 · How does variance change with baseline?}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 28 · How does variance change with baseline?}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 29 · Reduce variance using baseline}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 30 · Reduce variance using baseline}
+상태에만 의존하는 baseline은 행동 분포에 대한 score 평균을 0으로 만들어도 기댓값을 바꾸지 않습니다. baseline을 action-dependent로 만들면 이 증명이 자동으로 성립하지 않습니다.\par
+\subsubsection{슬라이드 31 · Summary of reducing variance of policy gradient}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 32 · REINFORCE}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 33 · Actor-critic algorithm}
+actor는 행동 확률을 조정하고 critic은 그 행동을 평가할 학습 신호를 제공합니다. critic은 보상을 대신하는 것이 아니라 정책경사의 분산을 낮추도록 반환을 근사합니다.\par
+\subsubsection{슬라이드 34 · Actor-critic is sample efficient than REINFORCE}
+actor는 행동 확률을 조정하고 critic은 그 행동을 평가할 학습 신호를 제공합니다. critic은 보상을 대신하는 것이 아니라 정책경사의 분산을 낮추도록 반환을 근사합니다.\par
+\subsubsection{슬라이드 35 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{03-2 · GAE와 Proximal Policy Optimization}
+N-step 반환은 일부 실제 보상을 더한 뒤 마지막 상태가치로 bootstrap한다. $n$이 길어지면 bootstrap 편향은 줄어드는 경향이 있지만 Monte Carlo에 가까워져 분산이 커진다. Generalized Advantage Estimation(GAE)은 TD 잔차 $\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)$의 지수 가중합으로 이 절충을 제어한다.\par
+\par\medskip
+\begin{equation*}
+
+\hat A_t^{GAE(\gamma,\lambda)}=\sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}.
+
+\end{equation*}
+\par\medskip
+$\lambda=0$이면 한 단계 TD 잔차에 가깝고, $\lambda=1$이면 종료까지 잔차를 합쳐 Monte Carlo advantage와 연결된다(terminal 처리와 가치 근사 가정하에서). $\lambda$는 단순한 성능 상수가 아니라 bias–variance 절충을 조절한다.\par
+\par\medskip
+PPO는 수집 정책과 현재 정책의 확률비 $r_t(	heta)=\pi_	heta(a_t\mid s_t)/\pi_{old}(a_t\mid s_t)$를 계산하고 clipped surrogate\par
+\par\medskip
+\begin{equation*}
+
+L^{CLIP}=\mathbb E_t[\min(r_t\hat A_t,\operatorname{clip}(r_t,1-\epsilon,1+\epsilon)\hat A_t)]
+
+\end{equation*}
+\par\medskip
+를 최대화한다. $\hat A>0$일 때 확률비를 너무 크게 올리는 이득을 자르고, $\hat A<0$일 때 너무 작게 내리는 이득을 잘라 한 번의 업데이트가 과도하게 멀어지는 것을 억제한다. 이것은 정책변화를 엄밀히 제한하는 hard constraint가 아니며, clipping만으로 학습이 안정하다고 보장되지 않는다. 가치 손실·엔트로피 보너스·정규화·batch 구성과 rollout 길이도 함께 영향을 준다.\par
+\subsection{Actor–critic과 표본 재사용}
+기존 on-policy 방법은 정책을 바꾸면 수집 자료가 현재 정책의 분포와 어긋난다. PPO는 하나의 rollout batch로 여러 minibatch epoch를 허용하되, 새 정책이 수집 정책에서 과도하게 벗어날 때 목적함수의 추가 이득을 제한한다.\par
+\subsection{N-step과 GAE 유도}
+N-step target은 $r_t+\gamma r_{t+1}+\cdots+\gamma^{n-1}r_{t+n-1}+\gamma^nV(s_{t+n})$이다. 각 n-step 추정의 혼합은 TD 잔차의 가중합으로 정리된다. 경계에서 terminal이면 bootstrap을 끄고, time-limit truncation이면 실제 task 종료인지 구분한다.\par
+\subsection{Importance sampling}
+옛 정책에서 뽑은 행동의 새 정책 기대값은 확률비로 재가중할 수 있다. 비율의 곱은 시간 길이에 따라 분산이 폭증할 수 있고, 데이터에서 드문 행동의 가중치가 매우 커질 수 있다. PPO는 이를 실용적으로 완화하지만 전체 trajectory importance sampling을 정확히 수행하는 것은 아니다.\par
+\subsection{PPO clipped objective}
+확률비와 advantage 부호를 각각 놓고 min·clip이 어느 항을 선택하는지 확인한다. clip은 gradient 이득을 평평하게 만드는 surrogate clipping이지 새 확률분포를 clip하는 연산이 아니다. 작은 $\epsilon$이 항상 좋지는 않으며 업데이트가 지나치게 보수적일 수 있다.\par
+\subsection{응용과 알고리즘 맥락}
+로봇 조립·보행·언어모델 선호 최적화는 PPO가 쓰인 사례지만, 사례의 성공을 알고리즘만의 공으로 해석하면 안 된다. 보상 설계, 시뮬레이터, 데이터, 정책 구조와 안전 제약이 함께 작동한다. PPO는 단순하고 튼튼한 기본선이지만 sample-efficient하다는 뜻은 아니다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://arxiv.org/abs/1707.06347}{Schulman et al., Proximal Policy Optimization Algorithms}
+\item \href{https://arxiv.org/abs/2203.02155}{Ouyang et al., Training language models to follow instructions with human feedback}
+\item \href{https://deepmind.google/blog/dm-control-software-and-tasks-for-continuous-control/}{Tassa et al., dm\_control}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 03 · Summary of reducing variance of policy gradient}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 04 · REINFORCE}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 05 · Actor-critic algorithm}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 06 · Actor-critic is sample efficient than REINFORCE}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 07 · Issues in this actor-critic approach}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 08 · N-step returns}
+N-step target은 N개 실제 보상 뒤의 가치 예측으로 bootstrap합니다. N을 늘릴수록 가치 함수 오차의 영향은 늦게 들어오고 반환 표본의 분산은 커지는 경향이 있습니다.\par
+\subsubsection{슬라이드 09 · Generalized advantage estimator (GAE)}
+GAE는 TD 잔차를 할인 가중합해 여러 지평의 추정을 섞습니다. λ=0은 1-step, λ가 1에 가까우면 긴 Monte Carlo 추정에 가까워집니다.\par
+\subsubsection{슬라이드 10 · Issues in this actor-critic approach}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 11 · REINFORCE requires on-policy data}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · Can policy gradients use old data?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 13 · Importance sampling for policy gradients}
+옛 정책의 표본을 재사용하려면 행동 확률비로 새 정책 기대를 보정합니다. 데이터에서 매우 드문 행동은 큰 가중치를 가져 추정 분산을 키울 수 있습니다.\par
+\subsubsection{슬라이드 14 · Actor-critic with importance sampling}
+옛 정책의 표본을 재사용하려면 행동 확률비로 새 정책 기대를 보정합니다. 데이터에서 매우 드문 행동은 큰 가중치를 가져 추정 분산을 키울 수 있습니다.\par
+\subsubsection{슬라이드 15 · Problem with importance sampling}
+옛 정책의 표본을 재사용하려면 행동 확률비로 새 정책 기대를 보정합니다. 데이터에서 매우 드문 행동은 큰 가중치를 가져 추정 분산을 키울 수 있습니다.\par
+\subsubsection{슬라이드 16 · Proximal policy optimization (PPO)}
+PPO는 수집 정책과 새 정책의 행동 확률비를 advantage에 곱합니다. min과 clipping은 advantage 부호별로 과도한 확률 변화가 주는 추가 최적화 이득을 억제합니다.\par
+\subsubsection{슬라이드 17 · Proximal policy optimization (PPO)}
+PPO는 수집 정책과 새 정책의 행동 확률비를 advantage에 곱합니다. min과 clipping은 advantage 부호별로 과도한 확률 변화가 주는 추가 최적화 이득을 억제합니다.\par
+\subsubsection{슬라이드 18 · Proximal policy optimization (PPO)}
+PPO는 수집 정책과 새 정책의 행동 확률비를 advantage에 곱합니다. min과 clipping은 advantage 부호별로 과도한 확률 변화가 주는 추가 최적화 이득을 억제합니다.\par
+\subsubsection{슬라이드 19 · Proximal policy optimization (PPO)}
+PPO는 수집 정책과 새 정책의 행동 확률비를 advantage에 곱합니다. min과 clipping은 advantage 부호별로 과도한 확률 변화가 주는 추가 최적화 이득을 억제합니다.\par
+\subsubsection{슬라이드 20 · Why is PPO good?}
+PPO가 널리 쓰이는 이유는 구현·튜닝이 비교적 단순하고 다양한 제어 문제에서 강한 기준선을 제공하기 때문입니다. 단순하다는 말이 데이터 효율·수렴 보장을 뜻하지는 않습니다.\par
+\subsubsection{슬라이드 21 · Narang et l. ctory: F st Cont ct for Robotic Assembly RSS 2022 21}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 22 · Singl et l. SAPG: Split nd Aggreg te Policy Gradients ICML 2024 22}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 23 · Robot locomotion demonstration}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 24 · More than just walking}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 25 · Robot manipulation demonstration}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 26 · ChatGPT (RL from Human Feedback)}
+선호 비교를 보상 신호로 바꾸면 언어모델 응답의 유용성처럼 정답 토큰 하나로 표현하기 어려운 목표를 최적화할 수 있습니다. 보상모델 오류와 reward hacking을 함께 경계합니다.\par
+\subsubsection{슬라이드 27 · Can we further improve sample ef iciency?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\section{04-1 · Q-learning, DQN과 Rainbow}
+가치기반 방법은 각 상태·행동의 장기 결과를 Q 함수로 추정한 뒤 높은 Q를 주는 행동을 고른다. 최적 행동가치의 Bellman 식은 $Q^*(s,a)=\mathbb E[r+\gamma\max_{a'}Q^*(s',a')]$다. 학습에서는 target $y=r+\gamma\max_{a'}Q_{target}(s',a')$에 현재 $Q_	heta(s,a)$를 맞추는 TD 회귀를 한다. $\max$가 탐험과 정책 선택을 분리하고, Q-learning을 off-policy control로 만든다.\par
+\par\medskip
+신경망 Q-learning은 연속 표본 상관과 moving target에 취약하다. replay buffer는 과거 transition을 섞어 표본 상관을 낮추고 데이터 재사용을 돕는다. target network는 목표 계산을 느리게 바꾸어 최적화 대상의 진동을 줄인다. 하지만 둘 모두 안정성을 돕는 장치이지 수렴을 보증하는 해결책은 아니다.\par
+\par\medskip
+max 연산은 잡음이 있는 추정값 중 가장 큰 것을 선택해 과대추정한다. Double DQN은 온라인 네트워크가 행동을 선택하고 target 네트워크가 그 행동을 평가해 선택과 평가의 오차를 분리한다. 이후 N-step return, prioritized replay, dueling network, distributional value 등을 결합한 Rainbow가 구성된다. Distributional RL은 기대값 하나 대신 가능한 반환의 분포 $Z(s,a)$를 학습한다. 기대값은 여전히 행동 선택 기준으로 쓸 수 있지만 위험 민감 목표라면 분포 자체의 정보가 유용하다.\par
+\subsection{정책평가에서 Q-learning으로}
+정책 반복과 가치 반복은 평가와 개선을 번갈아 수행한다. Q-learning은 target의 다음 행동에 현재 정책 행동을 쓰지 않고 $\max_{a'}$를 쓰므로 behavior policy가 탐험을 하더라도 greedy 목표로 학습한다. terminal transition에는 할인된 다음 Q를 더하지 않는다.\par
+\subsection{DQN 안정화: replay와 target network}
+시계열 이웃 샘플의 gradient가 비슷하면 SGD의 독립 표본 가정이 약해진다. replay buffer의 무작위 minibatch는 상관을 완화하고, target network는 bootstrapping target이 매 스텝 급격히 움직이는 현상을 완화한다. 이 둘은 서로 다른 병목을 겨냥한다.\par
+\subsection{탐험과 Atari 사례}
+ε-greedy는 대부분 현재 greedy 행동을 선택하고 확률 ε로 무작위 행동을 택한다. ε는 학습 스케줄 및 평가 모드와 구분한다. frame skip은 관측·행동 빈도를 낮춰 계산을 줄이지만 빠른 사건을 놓칠 수 있다.\par
+\subsection{Double DQN과 과대추정}
+잡음 있는 추정치 $\hat Q_a=Q_a+\varepsilon_a$ 중 최댓값의 기대는 보통 실제 최대보다 크다. 선택과 평가를 같은 추정기로 하면 선택된 양의 잡음도 평가에 들어간다. Double DQN target은 $r+\gamma Q_{target}(s',\arg\max_a Q_{online}(s',a))$다.\par
+\subsection{Rainbow 구성 요소}
+N-step return은 더 긴 실제 보상을 포함하고, prioritized replay는 TD-error가 큰 표본을 더 자주 학습한다. 비균등 샘플링으로 생기는 편향은 importance weight로 보정할 수 있다. dueling head는 상태 가치와 행동 이점을 분리해 행동 간 차이를 학습한다.\par
+\subsection{Distributional RL과 Rainbow}
+C51은 반환을 고정된 support 위의 categorical 분포로 근사하고 Bellman projection으로 target 분포를 옮긴다. 여기서 51은 상태 수가 아니라 반환값을 표현하는 atom의 수다. Rainbow는 여러 개선을 결합하므로 성능 향상을 단일 기법 하나에 귀속하지 않는다.\par
+\subsection{연속 행동으로의 전환}
+이산 행동이면 모든 행동의 Q를 계산하고 최대를 고를 수 있지만 연속 행동에서는 무한한 후보의 최적화가 필요하다. 다음 강의의 actor network는 Q를 크게 만드는 행동을 직접 제안한다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://www.nature.com/articles/nature14236}{Mnih et al., Human-level control through deep reinforcement learning}
+\item \href{https://arxiv.org/abs/1509.06461}{van Hasselt et al., Deep Reinforcement Learning with Double Q-learning}
+\item \href{https://arxiv.org/abs/1710.02298}{Hessel et al., Rainbow}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Policy gradient algorithms so far}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 03 · Policy is improved based on criterion :}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 04 · Value functions}
+이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.\par
+\subsubsection{슬라이드 05 · Fitted value iteration algorithm}
+현재 Q 예측을 즉시 보상과 다음 상태의 최선 가치 합에 맞춥니다. terminal 상태에서는 bootstrap 항을 0으로 마스킹해야 합니다.\par
+\subsubsection{슬라이드 06 · Bellman equation}
+현재 Q 예측을 즉시 보상과 다음 상태의 최선 가치 합에 맞춥니다. terminal 상태에서는 bootstrap 항을 0으로 마스킹해야 합니다.\par
+\subsubsection{슬라이드 07 · Fitted Q-iteration algorithm (Q-learning)}
+현재 Q 예측을 즉시 보상과 다음 상태의 최선 가치 합에 맞춥니다. terminal 상태에서는 bootstrap 항을 0으로 마스킹해야 합니다.\par
+\subsubsection{슬라이드 08 · Summary}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 09 · Q-learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 10 · Reinforcement Learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 11 · Problems in Q-learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · Correlated samples}
+연속 환경 표본은 인접 상태가 비슷해 gradient가 강하게 상관됩니다. replay buffer에서 시간적으로 떨어진 전이를 섞어 minibatch 다양성을 높입니다.\par
+\subsubsection{슬라이드 13 · Correlated samples}
+연속 환경 표본은 인접 상태가 비슷해 gradient가 강하게 상관됩니다. replay buffer에서 시간적으로 떨어진 전이를 섞어 minibatch 다양성을 높입니다.\par
+\subsubsection{슬라이드 14 · Problems in Q-learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 15 · Why is moving target a problem?}
+Q target은 현재 Q 추정으로 계산되므로 예측 대상 자체가 학습 중 움직입니다. target network는 이 변화를 느리게 하되 오래 고정하면 최신 추정 반영이 늦어지는 절충이 있습니다.\par
+\subsubsection{슬라이드 16 · Deep Q-Network (DQN)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 17 · Problems in Q-learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 18 · How do we explore new actions?}
+ε-greedy는 대부분 greedy 행동을 쓰고 일정 확률로 무작위 행동을 선택합니다. 학습 중 탐색률과 최종 평가 시 정책을 구분합니다.\par
+\subsubsection{슬라이드 19 · More tricks}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 20 · 학습 전개}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 21 · Deep Q-Network (DQN)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 22 · Reinforcement Learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 23 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 24 · Are the Q-values accurate?}
+이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.\par
+\subsubsection{슬라이드 25 · Are the Q-values accurate?}
+이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.\par
+\subsubsection{슬라이드 26 · Overestimation in Q-learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 27 · Double DQN (DDQN)}
+행동 선택은 online Q, 선택한 행동의 평가에는 target Q를 사용합니다. 같은 noisy 추정기로 선택과 평가를 할 때 생기는 max 과대추정을 줄이는 원리입니다.\par
+\subsubsection{슬라이드 28 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 29 · N-step returns}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 30 · N-step returns}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 31 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 32 · Prioritized experience replay (PER)}
+TD error가 큰 전이는 현재 추정이 target과 크게 어긋난 표본이라 더 자주 뽑힙니다. 비균등 표본추출에 따른 편향을 importance weight로 보정합니다.\par
+\subsubsection{슬라이드 33 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 34 · Why learn a return distribution?}
+C51은 반환의 기대값 하나가 아니라 고정된 support 위 categorical 분포를 예측합니다. Bellman 변환 뒤 확률질량을 support에 투영하는 단계가 추가됩니다.\par
+\subsubsection{슬라이드 35 · Value distribution}
+C51은 반환의 기대값 하나가 아니라 고정된 support 위 categorical 분포를 예측합니다. Bellman 변환 뒤 확률질량을 support에 투영하는 단계가 추가됩니다.\par
+\subsubsection{슬라이드 36 · Distributional Bellman equation}
+현재 Q 예측을 즉시 보상과 다음 상태의 최선 가치 합에 맞춥니다. terminal 상태에서는 bootstrap 항을 0으로 마스킹해야 합니다.\par
+\subsubsection{슬라이드 37 · Categorical DQN (C51)}
+C51은 반환의 기대값 하나가 아니라 고정된 support 위 categorical 분포를 예측합니다. Bellman 변환 뒤 확률질량을 support에 투영하는 단계가 추가됩니다.\par
+\subsubsection{슬라이드 38 · C51 implementation}
+C51은 반환의 기대값 하나가 아니라 고정된 support 위 categorical 분포를 예측합니다. Bellman 변환 뒤 확률질량을 support에 투영하는 단계가 추가됩니다.\par
+\subsubsection{슬라이드 39 · Distributional RL}
+C51은 반환의 기대값 하나가 아니라 고정된 support 위 categorical 분포를 예측합니다. Bellman 변환 뒤 확률질량을 support에 투영하는 단계가 추가됩니다.\par
+\subsubsection{슬라이드 40 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 41 · Rainbow}
+Rainbow는 Double DQN, multi-step, prioritized replay, dueling, distributional learning, NoisyNet을 결합한 구성입니다. 성능은 ablation으로 각 구성의 기여를 구분해야 합니다.\par
+\subsubsection{슬라이드 42 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{05-1 · 연속 제어: DDPG, TD3, SAC}
+연속 행동 공간에서는 매 상태에서 $\arg\max_aQ(s,a)$를 격자 탐색할 수 없다. DDPG는 actor $\mu_	heta(s)$가 행동을 제안하고 critic $Q_\phi(s,a)$가 평가하도록 해, chain rule로 \textbackslash{}(\par
+abla\_	heta J\textbackslash{}approx\textbackslash{}mathbb E[\par
+abla\_aQ\_\textbackslash{}phi(s,a)|\_\{a=\textbackslash{}mu(s)\}\par
+abla\_	heta\textbackslash{}mu\_	heta(s)]\textbackslash{})를 계산한다. replay buffer와 target actor/critic을 사용하는 off-policy actor–critic이다. 결정론적 정책은 탐험이 별도 잡음에 의존한다.\par
+\par\medskip
+DDPG critic의 max target은 Q 과대추정과 actor의 exploit에 취약하다. TD3는 clipped double Q로 두 critic 중 작은 값을 사용하고, target policy smoothing으로 target 행동에 제한된 잡음을 더하며, delayed policy update로 critic이 더 자주 학습되게 한다. 이는 세 장치가 각각 과대추정·좁은 Q 오류·actor-critic 시간척도 문제를 겨냥한다.\par
+\par\medskip
+SAC는 확률적 정책과 엔트로피 보너스를 통해 기대 보상과 행동의 무작위성을 함께 최적화한다. 목적식은 $\mathbb E[\sum_t r_t+\alpha\mathcal H(\pi(\cdot\mid s_t))]$다. 온도 $\alpha$가 보상과 엔트로피의 상대 비중을 정한다. SAC는 탐험을 정책 분포 안에 넣지만, 엔트로피가 항상 유익한 것은 아니며 학습 후 평가 시 샘플링 또는 평균 행동을 어떻게 사용할지도 정해야 한다.\par
+\subsection{DQN에서 연속 제어로}
+DQN은 행동 수가 작고 유한할 때 출력층에서 모든 Q값을 계산한다. 연속 행동에서는 매번 고차원 최적화가 필요하므로 actor가 optimizer 역할을 신경망으로 근사한다. target network와 replay buffer는 그대로 중요하지만 정책 자체도 target으로 관리한다.\par
+\subsection{DDPG의 actor–critic 업데이트}
+critic은 Bellman target에 회귀하고 actor는 critic의 행동 기울기를 따라 Q를 높인다. actor gradient는 $Q(s,\mu_	heta(s))$에 chain rule을 적용한 것이다. action exploration noise는 행동 수집용이며 정책 분포의 entropy와는 구분된다. soft target update는 $ar\phi\leftarrow(1-	au)ar\phi+	au\phi$처럼 천천히 추적한다.\par
+\subsection{TD3의 세 안정화 장치}
+clipped double Q는 두 target critic의 최소값, target smoothing은 다음 행동 주변의 국소 평균화, delayed update는 critic에 더 많은 보정 기회를 준다. 작은 편향을 받아 큰 과대추정 편향을 줄이는 trade-off다. DDPG와 TD3 모두 deterministic actor이므로 탐험 전략이 필요하다.\par
+\subsection{최대 엔트로피와 SAC}
+엔트로피 $\mathcal H(\pi)=-\mathbb E[\log\pi(a\mid s)]$가 높으면 정책이 여러 행동에 확률을 분산한다. SAC의 soft Q는 미래 보상에 entropy value를 포함하며, twin critics와 target을 사용한다. 자동 온도 조정은 목표 entropy에 맞추어 $\alpha$를 학습한다. 이는 reward scale과 무관한 상수가 아니다. 국내 RAILab의 사족보행 제어 연구는 거칠고 미끄럽거나 변형되는 지면에서 실험해 모델 오차가 있는 현실 환경의 강건성을 다룬다. 시뮬레이터에서 평균 return만 높이는 것과 실물에서 낙상·접촉·센서 지연을 견디는 것은 별도의 검증 문제다.\par
+\subsection{알고리즘 선택 관점}
+같은 환경도 action 차원, 데이터 재사용 가능성, reward scale, 계산 예산, 탐험 요구가 달라 최선의 방법이 달라진다. 성능 곡선의 평균과 분산, 상호작용 횟수를 함께 비교하고 단일 성공 사례로 일반화하지 않는다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://arxiv.org/abs/1509.02971}{Lillicrap et al., DDPG}
+\item \href{https://arxiv.org/abs/1802.09477}{Fujimoto et al., TD3}
+\item \href{https://arxiv.org/abs/1812.05905}{Haarnoja et al., Soft Actor-Critic}
+\item \href{https://railab.kaist.ac.kr/sections/research.html}{KAIST RAILab, learning-based legged robot control}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 03 · Policy is improved based on criterion :}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 04 · Bellman equation}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 05 · Problems in Q-learning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 06 · Deep Q-Network (DQN)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 07 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 08 · Overestimation in Q-learning}
+TD3는 두 critic의 작은 값을 쓰고 target 행동을 평활화하며 actor 업데이트를 늦춥니다. 각 장치가 서로 다른 과대추정·오차 전파 원인을 겨냥합니다.\par
+\subsubsection{슬라이드 09 · Double DQN (DDQN)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 10 · Improvements over DQN}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 11 · Fitted Q-iteration algorithm (Q-learning)}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 13 · DQN for continuous aaction spaces?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 14 · Finding greedy policy with continuous actions}
+연속 행동에는 후보를 모두 열거하는 argmax가 불가능합니다. actor가 후보 행동을 내고 critic의 행동 기울기로 정책을 개선합니다.\par
+\subsubsection{슬라이드 15 · Deep Deterministic Policy Gradient}
+DDPG는 replay 데이터를 재사용하는 off-policy deterministic actor–critic입니다. actor의 정책기울기는 Q의 행동 방향 기울기를 정책 매개변수 방향으로 연쇄 전달합니다.\par
+\subsubsection{슬라이드 16 · Soft target update}
+soft target update는 새 온라인 가중치를 작은 비율 τ만큼 target에 섞습니다. τ가 작으면 목표가 안정적이지만 적응은 느립니다.\par
+\subsubsection{슬라이드 17 · Deep deterministic policy gradient (DDPG)}
+DDPG는 replay 데이터를 재사용하는 off-policy deterministic actor–critic입니다. actor의 정책기울기는 Q의 행동 방향 기울기를 정책 매개변수 방향으로 연쇄 전달합니다.\par
+\subsubsection{슬라이드 18 · Epsilon-greedy exploration}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 19 · Summary of DDPG}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 20 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 21 · DDPG also has overestimation in Q}
+DDPG는 replay 데이터를 재사용하는 off-policy deterministic actor–critic입니다. actor의 정책기울기는 Q의 행동 방향 기울기를 정책 매개변수 방향으로 연쇄 전달합니다.\par
+\subsubsection{슬라이드 22 · DDPG also has overestimation in Q}
+DDPG는 replay 데이터를 재사용하는 off-policy deterministic actor–critic입니다. actor의 정책기울기는 Q의 행동 방향 기울기를 정책 매개변수 방향으로 연쇄 전달합니다.\par
+\subsubsection{슬라이드 23 · Target policy smoothing}
+TD3는 두 critic의 작은 값을 쓰고 target 행동을 평활화하며 actor 업데이트를 늦춥니다. 각 장치가 서로 다른 과대추정·오차 전파 원인을 겨냥합니다.\par
+\subsubsection{슬라이드 24 · Fujimoto et l. ddressing Funaction Approxim tion Error in Actor-Critic Meth}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 25 · Summary of TD3}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 26 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 27 · Can we use stochastic policy?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 28 · Maximum entropy RL}
+최대 엔트로피 목적은 기대 보상과 정책 무작위성의 균형을 둡니다. 온도 α가 이 균형을 바꾸며 학습·평가 정책의 표본화 방식도 명시해야 합니다.\par
+\subsubsection{슬라이드 29 · Why is more random policy preferred?}
+최대 엔트로피 목적은 기대 보상과 정책 무작위성의 균형을 둡니다. 온도 α가 이 균형을 바꾸며 학습·평가 정책의 표본화 방식도 명시해야 합니다.\par
+\subsubsection{슬라이드 30 · Soft Q-value}
+이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.\par
+\subsubsection{슬라이드 31 · Soft policy iteration}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 32 · Automatic temperature tuning}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 33 · Clipped double Q-learning Soft Q-value}
+이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.\par
+\subsubsection{슬라이드 34 · SAC}
+최대 엔트로피 목적은 기대 보상과 정책 무작위성의 균형을 둡니다. 온도 α가 이 균형을 바꾸며 학습·평가 정책의 표본화 방식도 명시해야 합니다.\par
+\subsubsection{슬라이드 35 · TD3 vs. SAC}
+TD3는 두 critic의 작은 값을 쓰고 target 행동을 평활화하며 actor 업데이트를 늦춥니다. 각 장치가 서로 다른 과대추정·오차 전파 원인을 겨냥합니다.\par
+\subsubsection{슬라이드 36 · What we have learned so far}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 37 · Next class}
+이 페이지는 이번 강의의 경계를 정리합니다. 마지막 개념이 다음 단원의 첫 질문으로 어떻게 이어지는지 한 문장으로 요약해 보세요.\par
+\section{05-2 · RL 실험과 벤치마크}
+RL 알고리즘 비교에는 최종 성능(asymptotic performance)과 표본 효율(sample efficiency)을 구분해야 한다. 학습 환경에서의 보상뿐 아니라 별도 평가 에피소드의 return, 학습 곡선, 여러 난수 시드의 분산을 보고한다. 같은 상호작용 수인지 gradient update 수인지 기준을 명시하지 않으면 데이터 효율 비교가 성립하지 않는다.\par
+\par\medskip
+벤치마크는 표준화된 환경과 과업으로 비교의 재현성을 높이지만, benchmark 점수가 실제 배치 성능을 보증하지는 않는다. Atari는 이산 행동과 영상 관측, MuJoCo·DeepMind Control Suite는 연속 물리 제어, LIBERO·RoboTwin은 로봇 조작과 과업 전이, RoboArena는 정책 선호 비교 등을 강조한다. 서로 다른 benchmark는 관측·행동·보상·데이터 조건이 달라 한 줄의 순위로 뭉치기 어렵다.\par
+\par\medskip
+평가 시 학습 시드, environment seed, 정규화 점수, 실패/성공 정의, 코드·환경 버전을 기록한다. 여러 과업 평균만 보고하면 특정 과업의 실패가 숨겨질 수 있으므로 분포나 과업별 결과도 살핀다. 사람의 선호 비교는 주관적이고 평가자·프롬프트에 민감하므로 자동 보상과 함께 해석한다.\par
+\subsection{평가 지표와 환경군}
+asymptotic return은 충분히 학습한 뒤의 도달 성능, sample efficiency는 같은 환경 상호작용 예산에서 얼마나 빨리 성능에 도달하는지다. DMC·Gymnasium·Atari·MiniGrid는 행동 공간과 시각 복잡도, horizon이 다르므로 지표와 조건을 맞추어 비교한다.\par
+\subsection{고전적 벤치마크}
+Gym 계열과 DeepMind Control Suite는 연속 제어 실험을 재현하는 표준 과업을 제공하고, Atari는 영상 입력 기반 이산 제어를 시험한다. 환경 버전, wrapper, frame skip, observation normalization을 바꾸면 결과가 달라질 수 있다.\par
+\subsection{로봇·VLA 평가}
+LIBERO는 지식 전이와 lifelong manipulation, RoboTwin은 시뮬레이션 로봇·과업 변형, RoboArena는 인간 선호 평가를 포함한다. 시뮬레이션에서 성공해도 실제 로봇의 접촉·마찰·카메라 지연 차이 때문에 sim-to-real gap이 남는다. 여러 시드와 물리적 반복 시험이 필요하다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://arxiv.org/abs/2108.13264}{Agarwal et al., Deep RL at the Edge of the Statistical Precipice}
+\item \href{https://gymnasium.farama.org/}{Farama Gymnasium environments}
+\item \href{https://github.com/google-deepmind/dm_control}{DeepMind Control Suite}
+\item \href{https://libero-project.github.io/}{LIBERO benchmark}
+\item \href{https://robotwin-platform.github.io/}{RoboTwin project}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · How do we compare RL algorithms?}
+최종 도달 성능과 같은 상호작용 예산에서의 표본 효율은 다른 질문입니다. 학습 step·환경 step·평가 episode 수를 맞춰 비교합니다.\par
+\subsubsection{슬라이드 03 · Popular RL benchmarks}
+각 benchmark는 제어 난도·관측 형태·과업 수가 다릅니다. benchmark 간 점수를 단일 순위처럼 직접 비교하지 않습니다.\par
+\subsubsection{슬라이드 04 · OpenAI gym, Deepmind Control Suite}
+각 benchmark는 제어 난도·관측 형태·과업 수가 다릅니다. benchmark 간 점수를 단일 순위처럼 직접 비교하지 않습니다.\par
+\subsubsection{슬라이드 05 · Atari}
+Atari 영상 입력 과업은 이산 행동과 픽셀 관측을 결합합니다. preprocessing과 frame skip까지 benchmark 설정의 일부로 기록해야 합니다.\par
+\subsubsection{슬라이드 06 · Many more benchmarks}
+각 benchmark는 제어 난도·관측 형태·과업 수가 다릅니다. benchmark 간 점수를 단일 순위처럼 직접 비교하지 않습니다.\par
+\subsubsection{슬라이드 07 · Recent benchmarks for VLAs}
+각 benchmark는 제어 난도·관측 형태·과업 수가 다릅니다. benchmark 간 점수를 단일 순위처럼 직접 비교하지 않습니다.\par
+\subsubsection{슬라이드 08 · RoboTwin 2.0}
+로봇 benchmark는 과업 전이, 조작 성공, 실제 선호 등 서로 다른 능력을 측정합니다. 시뮬레이션 점수와 실물 일반화 증거를 구분합니다.\par
+\subsubsection{슬라이드 09 · Evaluating policies for real-world robotics}
+로봇 benchmark는 과업 전이, 조작 성공, 실제 선호 등 서로 다른 능력을 측정합니다. 시뮬레이션 점수와 실물 일반화 증거를 구분합니다.\par
+\subsubsection{슬라이드 10 · RoboArena: VLA competition}
+로봇 benchmark는 과업 전이, 조작 성공, 실제 선호 등 서로 다른 능력을 측정합니다. 시뮬레이션 점수와 실물 일반화 증거를 구분합니다.\par
+\subsubsection{슬라이드 11 · FurnitureBench}
+로봇 benchmark는 과업 전이, 조작 성공, 실제 선호 등 서로 다른 능력을 측정합니다. 시뮬레이션 점수와 실물 일반화 증거를 구분합니다.\par
+\subsubsection{슬라이드 12 · HumanoidBench}
+로봇 benchmark는 과업 전이, 조작 성공, 실제 선호 등 서로 다른 능력을 측정합니다. 시뮬레이션 점수와 실물 일반화 증거를 구분합니다.\par
+\subsubsection{슬라이드 13 · HumanoidBench}
+로봇 benchmark는 과업 전이, 조작 성공, 실제 선호 등 서로 다른 능력을 측정합니다. 시뮬레이션 점수와 실물 일반화 증거를 구분합니다.\par
+\section{06 · Offline RL: 정적 데이터에서 정책 개선}
+Offline RL은 고정된 데이터셋 $\mathcal D=\{(s,a,r,s')\}$만으로 정책을 학습한다. 위험하거나 비싼 환경에서 새 상호작용을 피하고 과거 데이터를 재사용할 수 있다. 행동 복제와 달리 보상을 사용해 데이터에 있는 행동보다 나은 정책을 찾으려 한다. 어려움은 최적화된 정책이 데이터에 거의 없던 행동을 선택하고, 그 행동의 Q값을 신경망이 근거 없이 크게 예측하는 데서 생긴다. 이를 distribution shift와 extrapolation error라고 한다.\par
+\par\medskip
+일반 off-policy Q-learning target $r+\gamma\max_{a'}Q(s',a')$는 데이터에 없는 다음 행동을 최대화할 수 있다. 과대평가된 OOD 행동은 max 연산으로 선택되기 쉽고, bootstrapping으로 그 오류가 다음 상태들에 전파된다. 데이터에 가까운 정책을 유지하는 TD3+BC, OOD Q를 낮추는 보수적 Q-learning(CQL), 좋은 궤적만 모방하는 filtered BC, advantage에 비례해 행동을 가중하는 AWR가 서로 다른 완화책이다.\par
+\par\medskip
+CQL은 Bellman 오차에 데이터 밖 행동의 Q를 낮추는 정규화 항을 추가한다. 이산 행동에서 entropy regularizer를 포함한 최적화는 log-sum-exp 항 $\log\sum_a\exp Q(s,a)$으로 정리된다. 이 항은 큰 Q를 주는 행동에 특히 민감하며, 데이터 행동의 값과 비교해 OOD 영역의 과도한 낙관성을 누른다. 너무 강하면 과도하게 비관적이어서 정책 개선을 막는다.\par
+\par\medskip
+IQL은 학습 중 데이터 밖 행동에 Q를 질의하지 않도록 설계한다. 데이터 행동들의 Q 분포에서 expectile regression으로 좋은 행동 쪽의 상태가치 $V(s)$를 맞추고, 이를 TD target으로 Q를 학습한 뒤 advantage-weighted behavioral cloning으로 정책을 추출한다. expectile $	au>0.5$는 큰 잔차에 더 큰 가중을 주어 상위 행동의 가치를 추정한다. 이는 데이터 밖 행동값을 직접 평가하지 않는다는 뜻이지, 데이터가 전혀 담지 않은 전략을 보장된 방식으로 발명한다는 뜻은 아니다.\par
+\subsection{Offline RL의 정의와 필요}
+offline은 데이터를 새로 수집하지 않고 고정 데이터로 학습한다는 뜻이다. on-policy/off-policy는 target policy와 behavior policy의 관계를 가리키며, online/offline은 환경 상호작용 여부를 가리킨다. 이 두 분류 축을 혼동하지 않는다. dataset에 성공·실패, 상태 coverage, 행동 품질이 어떤 비율로 들어 있는지 먼저 감사한다.\par
+\subsection{분포 이동과 부트스트랩 오류}
+OOD는 입력이 단순히 숫자상 극단이라는 뜻이 아니라 학습 데이터 분포의 support에서 벗어났다는 뜻이다. max Q는 신뢰할 수 없는 후보 중 큰 추정치를 고른다. 그 값이 Bellman target에 반복 투입되면 값 오류가 연쇄적으로 확산된다.\par
+\subsection{TD3+BC: 정책 제약}
+행동 복제 항과 Q 최대화 항의 가중합으로 actor를 갱신해 데이터 행동에서 너무 멀어지지 않게 한다. Q 항의 scale을 정규화하는 이유는 보상 단위가 BC와 RL 항의 상대 가중을 임의로 바꾸지 않도록 하기 위해서다. 데이터가 낮은 품질이면 강한 복제가 개선을 막을 수 있다.\par
+\subsection{CQL: 보수적 Q 추정}
+CQL은 데이터 행동의 Q는 맞추고, 상태에서 표본화한 후보 행동의 Q는 보수적으로 낮춘다. log-sum-exp는 큰 후보 Q에 큰 가중을 주는 smooth maximum이다. 정규화 강도는 낙관성 억제와 유용한 정책 개선 사이를 조절한다. 이론적 하한 성질은 특정 가정과 설정 아래 성립하며 임의의 함수근사·데이터에서 자동 보장되는 것은 아니다.\par
+\subsection{Offline RL 평가와 OOD 행동}
+D4RL과 OGBench는 데이터 품질·coverage·목표 구조가 다른 오프라인 과업을 비교한다. 데이터에 없는 행동에서 Q가 얼마나 잘 맞는지는 직접 정답을 알기 어렵다. 높은 offline return 예측치만 보고 성공을 선언하지 말고 normalized score, 여러 데이터 regime, online fine-tuning 가능 여부와 재현성을 함께 본다.\par
+\subsection{Filtered BC와 AWR}
+Filtered BC는 trajectory return으로 상위 데이터를 고른 뒤 모방하므로 보상 크기 순위만 이용한다. AWR은 $\exp(A/eta)$로 transition별 log-likelihood를 가중해 상대적인 이득을 활용한다. 온도 $eta$가 작으면 상위 사례에 집중하지만 작은 추정오차에 민감해진다.\par
+\subsection{IQL과 expectile 회귀}
+SARSA식 target은 데이터에 저장된 다음 행동을 사용해 greedy OOD 행동을 평가하지 않는다. IQL의 expectile 손실은 잔차 $u=Q-V$의 부호에 따라 $	au u^2$ 또는 $(1-	au)u^2$를 적용한다. $	au>0.5$면 높은 Q 표본이 V를 위쪽으로 끌어올리고, advantage weight가 큰 데이터 행동을 정책이 더 잘 모방한다.\par
+\subsection{적용 분야와 핵심 정리}
+로봇 사전학습, 핵융합·냉각 제어, 칩 설계처럼 온라인 탐색 비용이 큰 분야가 동기다. 하지만 정적 데이터 밖에서 정책을 시험할 수 없다면 실제 개선 여부를 보장하기 어렵다. 안전한 shadow evaluation, 보수적 배포, 제한된 online fine-tuning을 포함한 검증 설계가 필요하다.\par
+\subsection*{더 읽을 자료}\begin{itemize}
+\item \href{https://arxiv.org/abs/2004.07219}{Fu et al., D4RL}
+\item \href{https://arxiv.org/abs/2410.20092}{Park et al., OGBench}
+\item \href{https://arxiv.org/abs/2106.06860}{Fujimoto \& Gu, TD3+BC}
+\item \href{https://arxiv.org/abs/2006.04779}{Kumar et al., Conservative Q-Learning}
+\item \href{https://arxiv.org/abs/1910.00177}{Peng et al., Advantage-Weighted Regression}
+\item \href{https://arxiv.org/abs/2110.06169}{Kostrikov et al., Implicit Q-Learning}
+\end{itemize}
+\subsubsection{슬라이드 01 · Reinforcement Learning}
+표지에서 이 강의의 주제를 확인하고, 뒤따르는 예시가 어떤 의사결정 문제를 설명하는지 질문을 세워 둡니다.\par
+\subsubsection{슬라이드 02 · Plan for today}
+오늘의 목차는 개념의 순서를 보여 줍니다. 각 항목을 읽을 때 앞에서 배운 도구가 다음 알고리즘의 어떤 약점을 해결하는지 연결합니다.\par
+\subsubsection{슬라이드 03 · Offline RL learns from given static data}
+offline RL은 고정 데이터셋으로 학습하고 새 전이를 수집하지 않습니다. 데이터 생성 정책은 알려져 있지 않거나 여러 정책의 혼합일 수 있습니다.\par
+\subsubsection{슬라이드 04 · Offline RL learns from given static data}
+offline RL은 고정 데이터셋으로 학습하고 새 전이를 수집하지 않습니다. 데이터 생성 정책은 알려져 있지 않거나 여러 정책의 혼합일 수 있습니다.\par
+\subsubsection{슬라이드 05 · How is offline RL different from BC?}
+BC는 데이터 행동을 따라 하고 offline RL은 보상으로 더 좋은 행동을 찾으려 합니다. 후자는 데이터 밖 행동을 평가해야 하므로 훨씬 어려운 외삽 문제가 생깁니다.\par
+\subsubsection{슬라이드 06 · Why is offline RL hard?}
+학습 데이터에 없는 행동의 Q값은 직접 검증할 수 없지만 max 연산은 그중 낙관적인 값을 선택할 수 있습니다. bootstrap이 반복되며 그 오류가 전파됩니다.\par
+\subsubsection{슬라이드 07 · Why, or when, might offline RL be useful?}
+질문형 제목에 답할 때 가정과 실패 모드를 먼저 적고, 다음 페이지의 해결책이 어떤 문제를 줄이는지 비교합니다.\par
+\subsubsection{슬라이드 08 · Can we simply use off-policy algorithms?}
+학습 데이터에 없는 행동의 Q값은 직접 검증할 수 없지만 max 연산은 그중 낙관적인 값을 선택할 수 있습니다. bootstrap이 반복되며 그 오류가 전파됩니다.\par
+\subsubsection{슬라이드 09 · Can we simply use off-policy algorithms?}
+학습 데이터에 없는 행동의 Q값은 직접 검증할 수 없지만 max 연산은 그중 낙관적인 값을 선택할 수 있습니다. bootstrap이 반복되며 그 오류가 전파됩니다.\par
+\subsubsection{슬라이드 10 · Summary of offline RL}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 11 · How to mitigate overestimation}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 12 · 1. Constrain a to stay close to behavior policy}
+TD3+BC는 actor 목적에 행동 복제 항을 더해 데이터 행동에서의 이탈을 억제합니다. 데이터 품질이 낮으면 제약이 정책 개선도 막을 수 있습니다.\par
+\subsubsection{슬라이드 13 · 2. Conservative Q estimation}
+CQL은 데이터 행동의 값은 보존하면서 후보 행동의 높은 Q를 낮춰 낙관적 외삽을 억제합니다. 보수성 계수가 지나치면 유망한 행동까지 억누릅니다.\par
+\subsubsection{슬라이드 14 · Learning conservative Q-functions}
+CQL은 데이터 행동의 값은 보존하면서 후보 행동의 높은 Q를 낮춰 낙관적 외삽을 억제합니다. 보수성 계수가 지나치면 유망한 행동까지 억누릅니다.\par
+\subsubsection{슬라이드 15 · Conservative Q-Learning (CQL)}
+CQL은 데이터 행동의 값은 보존하면서 후보 행동의 높은 Q를 낮춰 낙관적 외삽을 억제합니다. 보수성 계수가 지나치면 유망한 행동까지 억누릅니다.\par
+\subsubsection{슬라이드 16 · Conservative Q-Learning (CQL)}
+CQL은 데이터 행동의 값은 보존하면서 후보 행동의 높은 Q를 낮춰 낙관적 외삽을 억제합니다. 보수성 계수가 지나치면 유망한 행동까지 억누릅니다.\par
+\subsubsection{슬라이드 17 · Conservative Q-Learning (CQL)}
+CQL은 데이터 행동의 값은 보존하면서 후보 행동의 높은 Q를 낮춰 낙관적 외삽을 억제합니다. 보수성 계수가 지나치면 유망한 행동까지 억누릅니다.\par
+\subsubsection{슬라이드 18 · Conservative Q-Learning (CQL)}
+CQL은 데이터 행동의 값은 보존하면서 후보 행동의 높은 Q를 낮춰 낙관적 외삽을 억제합니다. 보수성 계수가 지나치면 유망한 행동까지 억누릅니다.\par
+\subsubsection{슬라이드 19 · How to evaluate offline RL?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 20 · How do we evaluate offline RL methods?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 21 · Offline benchmark examples}
+예시를 정책과 환경의 관점으로 다시 적습니다. 관측 상태, 선택 행동, 전이 확률, 보상 시점, 종료 여부를 분리하면 뒤의 수식을 같은 표기로 계산할 수 있습니다.\par
+\subsubsection{슬라이드 22 · How do we evaluate offline RL methods?}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 23 · Summary of TD3+BC and CQL}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\subsubsection{슬라이드 24 · Q-function is still unreliable on}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 25 · Q-function is unreliable on OOD actions}
+학습 데이터에 없는 행동의 Q값은 직접 검증할 수 없지만 max 연산은 그중 낙관적인 값을 선택할 수 있습니다. bootstrap이 반복되며 그 오류가 전파됩니다.\par
+\subsubsection{슬라이드 26 · Leveraging reward}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 27 · Behavioral cloning with rewards}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 28 · Behavioral cloning with advantage}
+AWR은 advantage가 높은 전이에 더 큰 likelihood 가중치를 줍니다. 지수 가중 온도 β가 작으면 상위 샘플에 집중하지만 오차에도 민감합니다.\par
+\subsubsection{슬라이드 29 · Behavioral cloning with advantage}
+AWR은 advantage가 높은 전이에 더 큰 likelihood 가중치를 줍니다. 지수 가중 온도 β가 작으면 상위 샘플에 집중하지만 오차에도 민감합니다.\par
+\subsubsection{슬라이드 30 · Behavioral cloning with advantage}
+AWR은 advantage가 높은 전이에 더 큰 likelihood 가중치를 줍니다. 지수 가중 온도 β가 작으면 상위 샘플에 집중하지만 오차에도 민감합니다.\par
+\subsubsection{슬라이드 31 · Q-learning without estimating OOD actions}
+학습 데이터에 없는 행동의 Q값은 직접 검증할 수 없지만 max 연산은 그중 낙관적인 값을 선택할 수 있습니다. bootstrap이 반복되며 그 오류가 전파됩니다.\par
+\subsubsection{슬라이드 32 · Q-learning without estimating OOD actions}
+학습 데이터에 없는 행동의 Q값은 직접 검증할 수 없지만 max 연산은 그중 낙관적인 값을 선택할 수 있습니다. bootstrap이 반복되며 그 오류가 전파됩니다.\par
+\subsubsection{슬라이드 33 · Value function with best actions}
+이 페이지에서 평가하는 대상이 상태가치 V인지 행동가치 Q인지 먼저 구분합니다. 평균 정책 행동과 최적 행동의 연산도 서로 바꾸어 쓰지 않습니다.\par
+\subsubsection{슬라이드 34 · Expectile regression}
+expectile 회귀는 양·음 잔차를 다르게 가중합니다. τ가 0.5보다 크면 Q 분포 상단의 행동이 상태가치 V를 더 크게 끌어올립니다.\par
+\subsubsection{슬라이드 35 · Implicit Q-Learning (IQL)}
+IQL은 학습 중 데이터 밖 행동에 Q를 질의하지 않습니다. expectile V 학습, 데이터 전이의 Q bootstrapping, advantage 가중 BC 순서를 확인합니다.\par
+\subsubsection{슬라이드 36 · Offline RL applications}
+슬라이드의 정의와 그림을 바로 앞·뒤 페이지의 식과 연결합니다. 기호의 조건부 대상, 학습 데이터가 온 정책, 그리고 업데이트에서 고정된 값이 무엇인지 표시해 보세요.\par
+\subsubsection{슬라이드 37 · Where to use offline RL?}
+실제 적용은 새 상호작용 비용이 큰 문제에서 동기화됩니다. 정적 데이터 범위 밖의 안전·성능은 별도의 제한된 실물 검증이 필요합니다.\par
+\subsubsection{슬라이드 38 · Pre-training for robots}
+실제 적용은 새 상호작용 비용이 큰 문제에서 동기화됩니다. 정적 데이터 범위 밖의 안전·성능은 별도의 제한된 실물 검증이 필요합니다.\par
+\subsubsection{슬라이드 39 · Nuclear fusion}
+실제 적용은 새 상호작용 비용이 큰 문제에서 동기화됩니다. 정적 데이터 범위 밖의 안전·성능은 별도의 제한된 실물 검증이 필요합니다.\par
+\subsubsection{슬라이드 40 · Cooling system}
+실제 적용은 새 상호작용 비용이 큰 문제에서 동기화됩니다. 정적 데이터 범위 밖의 안전·성능은 별도의 제한된 실물 검증이 필요합니다.\par
+\subsubsection{슬라이드 41 · Chip design}
+실제 적용은 새 상호작용 비용이 큰 문제에서 동기화됩니다. 정적 데이터 범위 밖의 안전·성능은 별도의 제한된 실물 검증이 필요합니다.\par
+\subsubsection{슬라이드 42 · Summary}
+요약의 항목을 정의·목적함수·데이터 요구량·주요 실패 원인으로 나누어 정리합니다. 이름이 비슷한 알고리즘의 차이는 이 네 축에서 드러납니다.\par
+\appendix
+\section*{수식 유도 노트}
+\par\medskip
+확률적 정책의 목적함수에서 출발해 정책경사, advantage, PPO, Q-learning, 연속 제어, offline RL의 학습식이 어떻게 나오는지 연결한다. 기호는 상태 $s$, 행동 $a$, 보상 $r$, 다음 상태 $s'$, 정책 $\pi_\theta$, 할인율 $\gamma$로 통일한다.\par
+\par\medskip
+\subsection{1. 정책경사: 환경을 미분하지 않고 정책을 미분하기}
+\par\medskip
+정책 $\pi_\theta$를 따라 생성된 궤적을 $\tau=(s_0,a_0,r_0,\ldots,s_T)$, 그 누적 보상을 $R(\tau)$라 두면 목표는\par
+\par\medskip
+\begin{equation*}
+J(\theta)=\mathbb E_{\tau\sim p_\theta}[R(\tau)]
+=\int p_\theta(\tau)R(\tau)\,d\tau
+\end{equation*}
+\par\medskip
+이다. 궤적 확률의 로그를 직접 미분하는 대신, $p>0$에서 $\nabla p=p\nabla\log p$라는 항등식을 쓴다.\par
+\par\medskip
+\begin{equation*}
+\begin{aligned}
+\nabla_\theta J(\theta)
+&=\int \nabla_\theta p_\theta(\tau)R(\tau)\,d\tau\\
+&=\int p_\theta(\tau)\nabla_\theta\log p_\theta(\tau)R(\tau)\,d\tau\\
+&=\mathbb E_{\tau\sim p_\theta}
+[\nabla_\theta\log p_\theta(\tau)R(\tau)].
+\end{aligned}
+\end{equation*}
+\par\medskip
+MDP에서 궤적 확률은 초기 상태 분포, 정책, 환경 전이의 곱이다.\par
+\par\medskip
+\begin{equation*}
+p_\theta(\tau)=\rho_0(s_0)\prod_{t=0}^{T-1}
+\pi_\theta(a_t\mid s_t)P(s_{t+1}\mid s_t,a_t).
+\end{equation*}
+\par\medskip
+로그를 취하면 곱이 합이 된다. 초기 분포와 환경 전이는 $\theta$에 의존하지 않는다고 가정하므로,\par
+\par\medskip
+\begin{equation*}
+\nabla_\theta\log p_\theta(\tau)
+=\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t).
+\end{equation*}
+\par\medskip
+따라서\par
+\par\medskip
+\begin{equation*}
+\nabla_\theta J
+=\mathbb E\left[
+\left(\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\right)R(\tau)
+\right].
+\end{equation*}
+\par\medskip
+이 식은 환경의 미분가능성을 요구하지 않는다. 대신 return을 실제 궤적에서 추정하므로 표본분산이 클 수 있다. $N$개 독립 궤적의 평균은 Monte Carlo 추정량이며, 표본 수를 늘릴수록 평균의 표준오차가 $1/\sqrt N$ 비율로 감소한다.\par
+\par\medskip
+\subsection{2. Reward-to-go와 baseline: 기대 gradient를 보존하는 분산 감소}
+\par\medskip
+시점 $t$의 행동은 그보다 앞선 보상을 바꾸지 않는다. 전체 return을 $G_0=\sum_{k=0}^{T-1}\gamma^kr_k$, 시점 $t$ 이후의 return을 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$라 하자. 과거 보상 $C_t=\sum_{k<t}\gamma^kr_k$에 대한 점수함수 항의 조건부 기대는\par
+\par\medskip
+\begin{equation*}
+\begin{aligned}
+\mathbb E[\nabla_\theta\log\pi_\theta(a_t\mid s_t)C_t\mid s_t]
+&=C_t\sum_a\pi_\theta(a\mid s_t)
+  \nabla_\theta\log\pi_\theta(a\mid s_t)\\
+&=C_t\nabla_\theta\sum_a\pi_\theta(a\mid s_t)\\
+&=C_t\nabla_\theta 1=0.
+\end{aligned}
+\end{equation*}
+\par\medskip
+그러므로 전체 return 대신 $G_t$를 사용해도 기대 gradient는 같고, 행동과 인과적으로 무관한 과거 보상만 제거된다.\par
+\par\medskip
+같은 계산으로 상태만의 함수인 임의의 baseline $b(s_t)$도 빼도 된다.\par
+\par\medskip
+\begin{equation*}
+\mathbb E_{a_t\sim\pi_\theta}
+[\nabla_\theta\log\pi_\theta(a_t\mid s_t)b(s_t)]
+=b(s_t)\nabla_\theta\sum_a\pi_\theta(a\mid s_t)=0.
+\end{equation*}
+\par\medskip
+따라서\par
+\par\medskip
+\begin{equation*}
+\nabla_\theta J
+=\mathbb E[\nabla_\theta\log\pi_\theta(a_t\mid s_t)
+(G_t-b(s_t))].
+\end{equation*}
+\par\medskip
+baseline을 $V^\pi(s_t)$로 근사하면 $G_t-V^\pi(s_t)$는 advantage의 표본 추정량이다. baseline은 평균 방향을 바꾸지 않으면서 큰 양·음의 반환을 기준점 주변으로 옮겨 분산을 줄인다. 행동에도 의존하는 baseline은 위의 합이 1이라는 증명을 그대로 쓸 수 없으므로 주의한다.\par
+\par\medskip
+\subsection{3. Bellman 식과 N-step·GAE}
+\par\medskip
+반환은 첫 보상과 남은 반환으로 분해된다.\par
+\par\medskip
+\begin{equation*}
+G_t=r_t+\gamma G_{t+1}.
+\end{equation*}
+\par\medskip
+이를 $V^\pi(s)=\mathbb E_\pi[G_t\mid s_t=s]$에 대입하고, 첫 행동과 다음 상태에 대해 조건부 기대를 취하면\par
+\par\medskip
+\begin{equation*}
+V^\pi(s)=\mathbb E_{a\sim\pi,\,s'\sim P}
+[r(s,a)+\gamma V^\pi(s')]
+\end{equation*}
+\par\medskip
+를 얻는다. 행동을 고정한 $Q^\pi$와 정책의 평균인 $V^\pi$는\par
+\par\medskip
+\begin{equation*}
+Q^\pi(s,a)=\mathbb E[r+\gamma V^\pi(s')],\qquad
+V^\pi(s)=\mathbb E_{a\sim\pi}[Q^\pi(s,a)]
+\end{equation*}
+\par\medskip
+로 연결된다. 최적 정책의 Bellman 식에서는 행동 평균을 최대화로 바꾼다.\par
+\par\medskip
+\begin{equation*}
+Q^*(s,a)=\mathbb E_{s'\sim P}
+[r(s,a)+\gamma\max_{a'}Q^*(s',a')].
+\end{equation*}
+\par\medskip
+가치함수 $V_\phi$의 한 단계 TD 잔차를\par
+$\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)$라 하자. 잔차를 $n$단계만큼 할인 합하면 중간 상태가치가 망원합처럼 상쇄된다.\par
+\par\medskip
+\begin{equation*}
+\begin{aligned}
+\sum_{l=0}^{n-1}\gamma^l\delta_{t+l}
+&=r_t+\gamma r_{t+1}+\cdots+\gamma^{n-1}r_{t+n-1}\\
+&\quad+\gamma^nV_\phi(s_{t+n})-V_\phi(s_t)\\
+&=G_t^{(n)}-V_\phi(s_t).
+\end{aligned}
+\end{equation*}
+\par\medskip
+즉 TD 잔차의 합은 N-step 반환의 advantage 추정량이다. 짧은 추정은 bootstrap에 더 의존하고 긴 추정은 실제 보상을 더 많이 포함한다. 이들을 지수 가중으로 혼합하면\par
+\par\medskip
+\begin{equation*}
+\hat A_t^{GAE}
+=\sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}.
+\end{equation*}
+\par\medskip
+$\lambda=0$에서는 한 단계 TD 잔차이고, $\lambda\to1$에서는 episode 끝까지의 잔차 합에 가까워진다. 실제 구현에서는 terminal 경계에서 마스크를 곱해 종료 뒤의 가치가 새어 들어가지 않게 한다. time-limit truncation은 과업 종료와 구별해 bootstrap 여부를 정한다.\par
+\par\medskip
+\subsection{4. PPO clipping은 무엇을 제한하는가}
+\par\medskip
+옛 정책으로 모은 행동의 새 정책 확률비는\par
+\par\medskip
+\begin{equation*}
+r_t(\theta)=
+\frac{\pi_\theta(a_t\mid s_t)}
+{\pi_{\theta_{\rm old}}(a_t\mid s_t)}
+\end{equation*}
+\par\medskip
+다. 비율이 1보다 크면 그 행동의 확률이 옛 정책보다 커졌고, 1보다 작으면 작아졌다. advantage가 양수면 확률을 높이고 음수면 낮추는 것이 유리하다. PPO surrogate는\par
+\par\medskip
+\begin{equation*}
+L^{CLIP}(\theta)=\mathbb E_t[
+\min(r_t\hat A_t,
+\operatorname{clip}(r_t,1-\epsilon,1+\epsilon)\hat A_t)].
+\end{equation*}
+\par\medskip
+$\hat A_t>0$이면 $r_t$가 커질수록 첫 항이 증가하지만 $1+\epsilon$보다 커진 뒤에는 두 번째 항이 더 작은 상한이 되어 목적함수의 이득이 더 커지지 않는다. $\hat A_t<0$이면 $r_t$를 지나치게 낮추는 것이 첫 항을 인위적으로 유리하게 만들 수 있는데, $1-\epsilon$ 아래에서는 clip 항이 더 작은(더 비관적인) 목적값을 선택해 그 방향의 과도한 개선을 막는다. 따라서 min을 쓰는 이유는 advantage 부호가 양수·음수일 때 모두 과한 확률비 변화의 이득을 잘라내기 위해서다.\par
+\par\medskip
+이 clipping은 전체 정책의 KL 거리를 엄밀하게 제한하는 제약식이 아니다. 일부 상태·행동의 확률비만 다루며, 여러 epoch가 누적되면 정책은 이동할 수 있다. 실제 학습에서는 KL, entropy, value loss, gradient norm도 관찰한다.\par
+\par\medskip
+\subsection{5. Q-learning, replay와 Double DQN}
+\par\medskip
+최적 Q 함수는 행동을 고정한 뒤 다음 상태에서 가장 큰 미래 가치를 선택한다.\par
+\par\medskip
+\begin{equation*}
+Q^*(s,a)=\mathbb E[r+\gamma\max_{a'}Q^*(s',a')].
+\end{equation*}
+\par\medskip
+데이터 전이 $(s,a,r,s')$로 target\par
+$y=r+\gamma(1-d)\max_{a'}Q_{\bar\theta}(s',a')$를 계산하고, 현재 예측을 회귀한다.\par
+\par\medskip
+\begin{equation*}
+\mathcal L(\theta)=
+\mathbb E_{\mathcal D}[(Q_\theta(s,a)-y)^2].
+\end{equation*}
+\par\medskip
+$d=1$은 terminal 표시다. 다음 상태의 값으로 자기 자신을 학습시키므로 bootstrapping이고, $\bar\theta$를 천천히 고정하는 target network가 target 이동을 늦춘다. replay buffer는 연속 시점 전이의 상관을 줄이고 과거 경험을 다시 사용한다.\par
+\par\medskip
+max의 과대추정은 두 행동만으로 볼 수 있다. 참값이 모두 $q$이고 추정 오차가 독립적으로 평균 0인 $\varepsilon_1,\varepsilon_2$여도\par
+\par\medskip
+\begin{equation*}
+\mathbb E[\max(q+\varepsilon_1,q+\varepsilon_2)]
+=q+\mathbb E[\max(\varepsilon_1,\varepsilon_2)]\ge q
+\end{equation*}
+\par\medskip
+다. 평균 0인 오차라도 큰 쪽을 고르기 때문에 최대값의 기대가 커진다. Double DQN은 online network로\par
+$a^*=\arg\max_aQ_\theta(s',a)$를 고르고 target network로 $Q_{\bar\theta}(s',a^*)$를 평가해 선택과 평가를 분리한다.\par
+\par\medskip
+\subsection{6. DDPG에서 SAC까지: 연속 행동을 제안하는 정책}
+\par\medskip
+연속 행동에서는 모든 $a$를 나열해 최대 Q를 찾을 수 없다. 결정론적 actor $\mu_\theta(s)$가 행동을 제안한다고 두고 목적을\par
+\par\medskip
+\begin{equation*}
+J(\theta)=\mathbb E_{s\sim\mathcal D}[Q_\phi(s,\mu_\theta(s))]
+\end{equation*}
+\par\medskip
+라 하자. chain rule을 적용하면\par
+\par\medskip
+\begin{equation*}
+\nabla_\theta J
+=\mathbb E_s[
+\nabla_aQ_\phi(s,a)|_{a=\mu_\theta(s)}
+\nabla_\theta\mu_\theta(s)].
+\end{equation*}
+\par\medskip
+critic이 actor의 행동 출력 방향으로 Q가 증가하는 국소 기울기를 제공한다. actor는 critic의 오류를 exploit할 수 있으므로 replay와 target network만으로 충분하지 않을 수 있고, TD3의 double critic·target smoothing·delayed update가 이를 완화한다.\par
+\par\medskip
+SAC는 보상뿐 아니라 정책 엔트로피를 최대화한다.\par
+\par\medskip
+\begin{equation*}
+J(\pi)=\mathbb E_\pi\left[
+\sum_t r_t+\alpha\mathcal H(\pi(\cdot\mid s_t))\right],
+\quad
+\mathcal H(\pi)=-\mathbb E_{a\sim\pi}[\log\pi(a\mid s)].
+\end{equation*}
+\par\medskip
+엔트로피가 커지면 한 행동에 확률을 몰아넣지 않아 탐험과 여러 유효 해의 유지에 도움이 된다. 이에 대응하는 soft Bellman target은\par
+$r+\gamma(\min_iQ_{\bar\phi_i}(s',a')-\alpha\log\pi(a'\mid s'))$, $a'\sim\pi(\cdot\mid s')$다. $\alpha$를 키우면 무작위성의 가치가 커지고, 낮추면 보상 최대화에 더 집중한다.\par
+\par\medskip
+\subsection{7. Offline RL: CQL의 log-sum-exp와 IQL의 expectile}
+\par\medskip
+정적 데이터 $\mathcal D$에는 제한된 행동만 들어 있다. 데이터 밖 행동의 Q는 직접적인 감독이 없는데, greedy 개선은 바로 그 Q가 큰 행동을 고른다. CQL은 데이터 행동의 Q를 Bellman target에 맞추면서 후보 행동의 높은 Q를 억제한다. entropy 정규화를 둔 정책 최적화 문제는 log-sum-exp가 된다.\par
+\par\medskip
+\begin{equation*}
+\max_{\pi(\cdot\mid s)}
+\left\{\mathbb E_{a\sim\pi}[Q(s,a)]
++\alpha\mathcal H(\pi)\right\}.
+\end{equation*}
+\par\medskip
+최적분포를 $\pi^*(a\mid s)\propto\exp(Q(s,a)/\alpha)$로 두면, 정규화 상수 $Z(s)=\sum_a\exp(Q(s,a)/\alpha)$에 대해 위 최적값은\par
+\par\medskip
+\begin{equation*}
+\alpha\log Z(s)=
+\alpha\log\sum_a\exp(Q(s,a)/\alpha).
+\end{equation*}
+\par\medskip
+따라서 큰 Q 후보에 부드럽게 민감한 항을 계산할 수 있다. 연속 행동에서는 log-sum-exp의 합 대신 행동 샘플 적분을 근사한다. 과한 보수성은 분포 밖 낙관성을 낮추는 대신 유망한 개선도 억누른다.\par
+\par\medskip
+IQL은 학습 중 데이터 밖 행동을 직접 선택해 평가하지 않는다. expectile 회귀는 잔차 $u=Q(s,a)-V(s)$의 부호에 따라 비대칭 가중 제곱오차를 쓴다.\par
+\par\medskip
+\begin{equation*}
+\mathcal L_\tau(u)=
+|\tau-\mathbf 1[u<0]|u^2
+=\begin{cases}
+(1-\tau)u^2,&u<0,\\
+\tau u^2,&u\ge0.
+\end{cases}
+\end{equation*}
+\par\medskip
+$\tau>1/2$이면 $Q>V$인 양의 잔차에 더 큰 가중을 주어 $V(s)$가 행동가치 분포의 높은 쪽을 추적한다. 그 다음 데이터 전이로 $Q(s,a)$를 $r+\gamma V(s')$에 맞추고, $Q-V$가 큰 데이터 행동을\par
+$\exp((Q-V)/\beta)$로 가중해 정책을 행동복제로 추출한다. 기대값 회귀는 $Q$의 평균에 맞추지만 expectile은 꼬리 쪽에 더 민감하다는 점이 정책 개선의 단서다.\par
+\par\medskip
+\subsection{참고 문헌}
+\par\medskip
+- Sutton \& Barto, *Reinforcement Learning: An Introduction*, 2nd ed.\par
+- Schulman et al., *Proximal Policy Optimization Algorithms* (2017).\par
+- Fujimoto \& Gu, *A Minimalist Approach to Offline Reinforcement Learning* (2021).\par
+- Kumar et al., *Conservative Q-Learning for Offline Reinforcement Learning* (2020).\par
+- Kostrikov et al., *Offline Reinforcement Learning with Implicit Q-Learning* (2022).\par
+\par\medskip
+\end{document}

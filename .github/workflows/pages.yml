@@ -1,0 +1,48 @@
+name: Build and publish study guide
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm run check
+      - name: Install XeLaTeX and Korean fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends texlive-xetex texlive-lang-korean texlive-fonts-recommended fonts-noto-cjk
+      - name: Compile Korean PDF guide
+        run: |
+          mkdir -p tmp/latex-output
+          xelatex -interaction=nonstopmode -halt-on-error -output-directory=tmp/latex-output -jobname=study-guide guide/main.tex
+          xelatex -interaction=nonstopmode -halt-on-error -output-directory=tmp/latex-output -jobname=study-guide guide/main.tex
+          cp tmp/latex-output/study-guide.pdf docs/study-guide.pdf
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+  deploy:
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/deploy-pages@v4

@@ -1,0 +1,618 @@
+[
+  {
+    "id": "01-1",
+    "source": "DRL_01-1_course_overview.pdf",
+    "title": "Deep RL의 문제와 응용",
+    "short": "순차적 의사결정이 필요한 이유",
+    "color": "blue",
+    "intro": "이 장은 강화학습을 ‘정답 라벨을 맞히는 학습’이 아니라, 행동이 환경을 바꾸고 그 결과가 다음 결정의 조건이 되는 **순차적 의사결정**으로 소개한다. 지도학습이 관측과 정답의 대응을 배우는 데 강하다면, 강화학습은 행동의 결과를 보상으로 평가하고 장기적인 결과를 고려한다. 로봇 제어, 게임, 칩 설계, 대화형 시스템처럼 지금의 선택이 미래 상태와 이후 선택의 질을 바꾸는 문제에서 이 관점이 필요하다.\n\n강화학습의 학습 신호는 대개 행동마다 정답 행동을 알려 주지 않는다. 에이전트는 정책을 통해 행동을 고르고, 환경은 다음 상태와 보상을 반환한다. 따라서 “무엇을 예측하는가?”보다 “어떤 경험이 어떤 정책을 더 낫게 만드는가?”가 핵심 질문이다. 이어지는 강의는 이 질문을 모방학습, MDP, 정책경사, 가치함수, off-policy와 offline RL로 구체화한다.",
+    "sources": [
+      [
+        "Sutton & Barto, Reinforcement Learning: An Introduction",
+        "https://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      [
+        "Roy et al., PrefixRL",
+        "https://doi.org/10.1145/3453688.3461744"
+      ],
+      [
+        "Black et al., Training Diffusion Models with Reinforcement Learning",
+        "https://arxiv.org/abs/2305.13301"
+      ],
+      [
+        "KAIST, APT-RL 실제 사족보행 로봇 연구",
+        "https://www.kaist.ac.kr/newsen/html/news/?GotoPage=1&mng_no=64450&mode=V&skey=keyword&sval=robot"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 5,
+        "label": "강의의 문제 설정",
+        "note": "강화학습이라는 분야의 이름보다 먼저 기억할 것은 입력·행동·결과가 반복되는 루프다. 보상은 정답 행동의 라벨이 아니라 결과를 평가하는 숫자다. 같은 행동도 상태와 이후 결과에 따라 가치가 달라질 수 있다."
+      },
+      {
+        "from": 6,
+        "to": 10,
+        "label": "순차 결정과 강의 범위",
+        "note": "여러 결정이 연결되면 현재 행동의 가치는 미래 상태를 통해서도 나타난다. 강의의 중심은 에이전트가 환경과 상호작용해 정책을 학습하는 방법이며, imitation learning과 model-free/model-based, online/offline 분류는 서로 다른 축이다."
+      },
+      {
+        "from": 11,
+        "to": 19,
+        "label": "선수 지식과 학습 경로",
+        "note": "확률과 미적분은 확률적 정책의 기대 보상을 미분할 때, 선형대수와 역전파는 함수근사기를 학습할 때 쓰인다. 각 알고리즘을 외우기보다 데이터 수집 방식, 목적함수, 편향·분산, 안정성을 연결해 두면 뒤의 구현 선택이 이해된다."
+      },
+      {
+        "from": 20,
+        "to": 30,
+        "label": "왜 강화학습인가: 응용 사례",
+        "note": "정확도처럼 미분 가능한 정답 손실로 목표를 표현하기 어려울 때, 성공 여부·선호·비용 같은 결과 신호로 최적화할 수 있다. AlphaGo의 탐색과 학습, 로봇의 물리적 피드백, 언어모델의 선호 최적화는 모두 같은 루프를 공유하지만 환경·보상·데이터 위험은 서로 다르다. 국내 사례로 KAIST의 APT-RL은 시뮬레이션에서 걷기·달리기·점프 기술을 사전 학습한 뒤, 실제 사족보행 로봇이 계단과 틈 같은 복합 지형에서 보행 기술을 자율적으로 전환하도록 강화학습과 온보드 인지를 결합한다. 이는 보상으로 제어를 개선하는 RL과 대규모 동작 시연으로 초기 행동을 배우는 모방학습이 상호보완적임을 보여 준다."
+      },
+      {
+        "from": 31,
+        "to": 32,
+        "label": "핵심 질문 정리",
+        "note": "강화학습은 모든 문제에 더 좋은 범용 학습법이라는 뜻이 아니다. 정답 데이터가 충분하고 목표가 예측이면 지도학습이 더 간단할 수 있다. 행동이 미래를 바꾸고 경험을 통해 목표를 개선해야 하는지 먼저 따져야 한다."
+      }
+    ]
+  },
+  {
+    "id": "01-2",
+    "source": "DRL_01-2_imitation.pdf",
+    "title": "Imitation learning과 로봇 정책",
+    "short": "시연 데이터에서 자율 행동으로",
+    "color": "teal",
+    "intro": "모방학습(imitation learning)은 전문가의 행동 예시에서 정책을 배우는 방법이다. 가장 단순한 행동 복제(behavioral cloning, BC)는 데이터 \\(\\mathcal D=\\{(s_i,a_i)\\}\\)를 지도학습으로 처리한다. 이 접근은 정답 행동을 수집할 수 있는 로봇 조작·자율주행·인터페이스 문제에서 효과적이며, 보상 설계 없이 빠르게 출발할 수 있다. 하지만 학습 상태 분포와 실제 정책이 방문하는 상태 분포가 달라지면 작은 오차가 누적된다.\n\n행동 오차가 상태를 바꾸고, 바뀐 상태에서 다시 잘못된 행동을 내면 오류가 연쇄적으로 커진다. DAgger는 학습된 정책이 방문한 상태에서 전문가의 교정 행동을 받아 데이터에 추가해 이 분포 이동을 완화한다. 다중 모드 시연에서는 평균 제곱 오차가 서로 다른 유효 행동의 평균을 만들어 무효 행동을 낼 수 있으므로 확률적·표현력 있는 정책이 필요하다. ALOHA/ACT, Mobile ALOHA, Diffusion Policy, 로봇 데이터셋과 VLA 사례는 데이터 규모·행동 표현·일반화가 실제 시스템에서 왜 중요한지 보여 준다.\n\n**행동 복제 손실의 출발점.** 이산 행동에서 정책은 범주분포 \\(\\pi_\theta(a\\mid s)\\)이고, 음의 로그우도는\n\n$$\n\\mathcal L_{BC}(\theta)=-\frac1N\\sum_{i=1}^N\\log\\pi_\theta(a_i\\mid s_i).\n$$\n\n연속 행동에서는 흔히 정책이 평균과 공분산을 출력하는 정규분포를 두고 같은 우도 목적을 쓴다. 평균 제곱 오차는 등분산 Gaussian 우도의 특수한 형태다. 이 손실이 직접 최적화하는 것은 관측된 상태에서의 행동 예측이며, 장기 누적 보상의 극대화와 같지는 않다.",
+    "sources": [
+      [
+        "Ross et al., DAgger",
+        "https://proceedings.mlr.press/v15/ross11a.html"
+      ],
+      [
+        "Zhao et al., ACT / ALOHA",
+        "https://arxiv.org/abs/2304.13705"
+      ],
+      [
+        "Chi et al., Diffusion Policy",
+        "https://arxiv.org/abs/2303.04137"
+      ],
+      [
+        "DROID robot manipulation dataset",
+        "https://droid-dataset.github.io/"
+      ],
+      [
+        "KAIST, APT-RL 보행 기술",
+        "https://pure.kaist.ac.kr/en/publications/agile-perceptive-multiskill-locomotion-for-quadrupedal-robots-in-/"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 8,
+        "label": "정책과 행동 복제",
+        "note": "정책 \\(\\pi(a\\mid s)\\)는 상태에서 행동을 고르는 규칙이다. BC는 expert label이 있는 지도학습으로 이 규칙을 근사한다. 분류에는 cross-entropy, 연속 제어에는 likelihood 또는 회귀 손실을 쓰되, 라벨의 행동이 유일한 정답이라는 가정이 숨어 있는지 확인한다."
+      },
+      {
+        "from": 9,
+        "to": 11,
+        "label": "시연 수집",
+        "note": "사람 운전 기록처럼 자연스럽게 쌓인 데이터, 로봇의 kinesthetic teaching, 원격조종, puppeteering은 비용·시야·제어 정밀도·시연자 안전성이 다르다. 좋은 데이터는 단순히 많기만 한 것이 아니라 에이전트가 실제로 볼 관측과 같은 조건에서 수집되어야 한다."
+      },
+      {
+        "from": 12,
+        "to": 17,
+        "label": "BC가 실패하는 세 가지 이유",
+        "note": "covariate shift는 훈련 시 입력 분포와 배포 시 입력 분포의 차이다. compounding error는 그 차이가 정책 행동을 통해 시간에 따라 증폭되는 현상이다. 서로 다른 성공 전략을 평균내는 multimodal 오류, 전문가에게만 보이는 정보가 있는 observability mismatch도 별개의 문제다."
+      },
+      {
+        "from": 18,
+        "to": 20,
+        "label": "DAgger의 교정 루프",
+        "note": "학습 정책을 실행해 방문 상태를 모으고, 그 상태에서 전문가 행동을 질의한 뒤 기존 데이터와 합쳐 정책을 재학습한다. 정책이 만든 상태 분포를 학습 분포에 반영한다는 것이 핵심이다. 실제로는 전문가 질의 비용과 안전한 개입 설계가 병목이 된다."
+      },
+      {
+        "from": 21,
+        "to": 32,
+        "label": "ALOHA와 ACT",
+        "note": "저가 양팔 로봇과 원격조종으로 반복 가능한 시연을 수집하고, ACT는 여러 미래 관절 목표를 action chunk로 예측해 시간적 일관성을 높인다. 단일 프레임에서 한 순간의 행동만 예측할 때보다 여러 단계의 행동을 묶는 것이 제어 지연과 고주파 흔들림을 줄일 수 있다. 국내 비교 사례인 KAIST APT-RL은 여러 보행 skill을 사전 준비하고 강화학습으로 환경에 맞는 전환을 익힌다. ALOHA/ACT가 양팔 조작의 시연 데이터와 action chunk에 초점을 두는 것과 달리, 이 사례는 사족보행 skill의 선택·전환과 실제 거친 지형 일반화를 강조한다."
+      },
+      {
+        "from": 33,
+        "to": 36,
+        "label": "Diffusion Policy",
+        "note": "조건부 확산 정책은 잡음에서 출발해 관측에 맞는 행동 시퀀스를 반복적으로 복원한다. 한 상태에 가능한 여러 유효 행동 모드를 하나의 평균으로 뭉개지 않고 샘플링할 수 있다. 표현력의 대가로 추론 반복 횟수와 데이터·계산 요구량이 증가한다."
+      },
+      {
+        "from": 37,
+        "to": 48,
+        "label": "대규모 로봇 데이터와 VLA",
+        "note": "Open X-Embodiment, DROID 같은 다기관 데이터는 로봇·센서·행동 공간의 이질성을 포함한다. 데이터 양이 늘면 일반화 가능성이 커지지만, 좌표계·행동 단위·카메라·과업 정의를 맞추지 않으면 같은 라벨이 다른 의미를 갖는다. VLA는 언어와 시각 조건을 행동 생성에 연결한다."
+      },
+      {
+        "from": 49,
+        "to": 50,
+        "label": "모방학습의 역할",
+        "note": "모방학습은 강력한 초기 정책이자 데이터 효율적인 방법이다. 그러나 전문가 데이터보다 더 나은 행동을 찾으려면 보상 또는 선호 신호와 추가 상호작용이 필요하다. 정책 품질을 평가할 때 훈련 손실만 보지 말고 새로운 초기 조건에서 실제 성공률을 측정한다."
+      }
+    ]
+  },
+  {
+    "id": "02-1",
+    "source": "DRL_02-1_reinforcement_learning_basics.pdf",
+    "title": "MDP와 순차적 의사결정",
+    "short": "상태·행동·보상·전이의 수학적 틀",
+    "color": "amber",
+    "intro": "Markov decision process(MDP)는 강화학습 문제를 \\((\\mathcal S,\\mathcal A,P,r,\\gamma,\rho_0)\\)로 표현한다. 상태 \\(s\\)와 행동 \\(a\\), 전이확률 \\(P(s'\\mid s,a)\\), 보상 \\(r(s,a)\\), 할인율 \\(\\gamma\\), 초기 상태 분포 \\(\rho_0\\)가 환경과 목표를 정의한다. 정책 \\(\\pi(a\\mid s)\\)는 에이전트의 행동 규칙이다. MDP의 Markov 가정은 현재 상태를 알면 미래가 과거 전체에 추가로 의존하지 않는다는 조건이다. 관측만으로 충분한 상태를 만들지 못하면 관측 기반 정책이나 belief state가 필요하다.\n\n보상의 합을 최적화한다고 해서 매 시점의 보상을 탐욕적으로 고르면 되는 것은 아니다. 현재 행동은 전이확률을 바꾸어 미래 보상의 분포까지 바꾸므로 기대 누적 보상을 비교해야 한다. 유한 지평에서는 종료 시점까지 합하고, 무한 지평에서는 할인합 \\(G_t=\\sum_{k=0}^{\\infty}\\gamma^k r_{t+k}\\)를 자주 쓴다. \\(\\gamma\\)가 1에 가까울수록 먼 미래를 더 중시하지만 추정 난도와 분산도 커진다.\n\n**기대값에서 Bellman 식으로.** 상태가치의 정의는 \\(V^\\pi(s)=\\mathbb E_\\pi[G_t\\mid s_t=s]\\)다. 반환을 첫 보상과 나머지 반환으로 분리하면 \\(G_t=r_t+\\gamma G_{t+1}\\)이고, 조건부 기대값의 선형성으로\n\n$$\nV^\\pi(s)=\\mathbb E_{a\\sim\\pi,\\,s'\\sim P}[r(s,a)+\\gamma V^\\pi(s')].\n$$\n\n같은 논리에서 \\(Q^\\pi(s,a)=\\mathbb E[r+\\gamma V^\\pi(s')]\\)이며 \\(V^\\pi(s)=\\mathbb E_{a\\sim\\pi}[Q^\\pi(s,a)]\\)다. 최적 가치에서는 정책의 평균 대신 가능한 행동 중 최대를 취해 Bellman optimality equation을 얻는다. 예시의 숫자를 계산할 때는 전이확률의 합이 1인지, terminal state 이후 가치를 0으로 두었는지 확인한다.",
+    "sources": [
+      [
+        "Sutton & Barto, Markov decision processes",
+        "https://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      [
+        "Gymnasium documentation",
+        "https://gymnasium.farama.org/"
+      ],
+      [
+        "DeepMind Control Suite",
+        "https://arxiv.org/abs/1801.00690"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 17,
+        "label": "복습과 문제 형식화",
+        "note": "행동·상태를 정했으면 시간 순서와 보상이 언제 관측되는지 고정한다. 같은 이름의 상태라도 환경을 예측하는 데 과거 정보가 필요하면 Markov state가 아니다. 로봇의 위치·속도처럼 필요한 이력을 상태에 포함하거나 확률적 belief로 요약할 수 있다."
+      },
+      {
+        "from": 18,
+        "to": 21,
+        "label": "Markov 과정과 Markov 성질",
+        "note": "Markov chain은 상태 전이만 있는 확률 과정이고, Markov reward process는 여기에 보상과 할인 목표를 추가한다. MDP는 에이전트가 선택하는 행동과 정책을 더한다. ‘Markov’는 과정이 기억이 없다는 뜻이 아니라 현재 상태가 예측에 충분한 통계량이라는 뜻이다."
+      },
+      {
+        "from": 22,
+        "to": 26,
+        "label": "작은 상태 공간에서 기대값 계산",
+        "note": "전이 그래프 예시는 경로별 보상을 확률로 가중해 기대 반환을 계산하게 한다. 여러 경로가 합쳐지는 상태에서는 각 경로의 확률질량을 더한다. 보상 표기와 상태가치 표기를 구분하고, terminal 상태에는 추가 미래 보상이 없음을 명시한다."
+      },
+      {
+        "from": 27,
+        "to": 35,
+        "label": "정책과 Bellman 방정식",
+        "note": "정책을 고정하면 상태가치 식은 선형 기대값 관계가 된다. 최적 정책을 구하면 행동 축의 max가 들어가며 식이 비선형이 된다. 이 평균과 최대의 차이가 policy evaluation과 control, on-policy와 off-policy 알고리즘의 중요한 구분으로 이어진다."
+      },
+      {
+        "from": 36,
+        "to": 39,
+        "label": "로봇·게임·대화 예시",
+        "note": "Ant 제어는 연속 상태·연속 행동, 게임은 큰 이산 행동·장기 전략, 챗봇은 긴 문맥과 지연된 품질 신호를 갖는다. 이들을 같은 MDP 표기로 쓸 수 있지만 상태 표현, 보상 희소성, 전이 비용은 알고리즘 선택을 바꾼다."
+      },
+      {
+        "from": 40,
+        "to": 41,
+        "label": "용어 정리",
+        "note": "trajectory는 정책과 환경의 상호작용으로 생성된 상태·행동·보상 열이다. episode는 명시적 종료가 있는 경우고, continuing task는 임의 시점에서 끊어 관찰하더라도 개념상 계속된다. 종료와 시간 제한(truncation)을 섞으면 bootstrapping target이 달라진다."
+      }
+    ]
+  },
+  {
+    "id": "02-2",
+    "source": "DRL_02-2_policy_gradient_methods.pdf",
+    "title": "Policy gradient와 REINFORCE",
+    "short": "확률적 정책을 기대 보상으로 최적화",
+    "color": "blue",
+    "intro": "정책경사는 행동을 직접 고르는 정책 \\(\\pi_\theta(a\\mid s)\\)의 기대 성능 \\(J(\theta)=\\mathbb E_{\tau\\sim\\pi_\theta}[R(\tau)]\\)을 미분한다. trajectory 확률에는 환경 전이도 포함되지만, 환경 미분이 불가능해도 score-function identity로 정책 매개변수에 대한 gradient를 얻는다.\n\n**로그미분 트릭의 유도.** 분포가 매개변수에 의존하는 기대값을 적분으로 쓰면\n\n$$\n\nabla_\theta J=\nabla_\theta\\int p_\theta(\tau)R(\tau)d\tau=\\int p_\theta(\tau)\nabla_\theta\\log p_\theta(\tau)R(\tau)d\tau.\n\n$$\n\n따라서 \\(\nabla J=\\mathbb E[\nabla\\log p_\theta(\tau)R(\tau)]\\)다. trajectory 확률을 초기상태·정책·환경전이의 곱으로 분해하면 정책에 의존하는 항만 남아 \\(\\sum_t\nabla\\log\\pi_\theta(a_t\\mid s_t)\\)가 된다. 이는 score-function estimator 또는 likelihood-ratio estimator다. 환경의 미분이 필요 없다는 장점이 있지만 반환 전체가 각 행동의 점수에 곱해져 분산이 크다.\n\nREINFORCE는 이 기대값을 실제 궤적 표본의 평균으로 근사해 경사 상승한다. Monte Carlo 반환은 편향이 작지만 분산이 크고, 업데이트 후에는 새 정책의 데이터를 다시 모아야 하는 on-policy 방법이다. 표본 수를 늘리면 독립 표본 가정 아래 평균 추정량의 표준오차는 대략 \\(1/\\sqrt N\\)으로 줄지만 환경 상호작용 비용이 든다.",
+    "sources": [
+      [
+        "Williams, Simple statistical gradient-following algorithms for connectionist reinforcement learning",
+        "https://doi.org/10.1007/BF00992696"
+      ],
+      [
+        "Sutton et al., Policy Gradient Methods for Reinforcement Learning with Function Approximation",
+        "https://papers.nips.cc/paper_files/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 6,
+        "label": "MDP 복습과 정책 목표",
+        "note": "정책경사는 정책 매개변수를 직접 바꾸는 policy-based 방법이다. 목적은 단일 행동 라벨의 정확도가 아니라 정책이 환경에서 얻는 기대 반환이다. 상태·행동이 확률적이고 trajectory가 정책에 의해 선택된다는 점이 일반 지도학습의 고정 입력 분포와 다르다."
+      },
+      {
+        "from": 7,
+        "to": 10,
+        "label": "로그미분 유도",
+        "note": "분포를 미분하는 대신 \\(\nabla p=p\nabla\\log p\\)를 이용해 점수함수와 보상의 곱의 기댓값으로 바꾼다. 식의 순서를 따라 적분 → 미분 → 로그미분 항등식 → 표본 평균을 확인한다. 보상은 gradient를 만든다기보다 좋은 trajectory에 더 큰 가중치를 부여한다."
+      },
+      {
+        "from": 11,
+        "to": 14,
+        "label": "REINFORCE 추정량",
+        "note": "trajectory 로그확률은 시간별 정책 로그확률의 합이다. 따라서 한 궤적의 return으로 모든 행동의 점수함수를 가중한다. 보상을 최대화하므로 gradient ascent를 쓰며, 손실 최소화 프레임워크에 넣을 때는 부호를 바꾸어 음의 목적함수를 최소화한다."
+      },
+      {
+        "from": 15,
+        "to": 19,
+        "label": "분산과 표본 수",
+        "note": "gradient estimator가 unbiased여도 한 업데이트의 방향은 매우 noisy할 수 있다. 표본 수 증가는 분산을 낮추지만 시뮬레이터 호출 수를 늘린다. reward-to-go, baseline, 가치함수와 advantage는 같은 기대 gradient를 더 효율적으로 추정하려는 다음 강의의 도구다."
+      },
+      {
+        "from": 20,
+        "to": 20,
+        "label": "다음 연결",
+        "note": "직접 정책을 최적화하는 것만으로는 데이터 재사용과 낮은 분산이 해결되지 않는다. 다음 단계에서는 정책의 점수에 곱할 신호를 반환에서 가치함수·advantage로 바꾸어 어느 행동이 기준보다 나았는지 추정한다."
+      }
+    ]
+  },
+  {
+    "id": "03-1",
+    "source": "DRL_03-1_actor_critic.pdf",
+    "title": "가치함수와 Actor–Critic",
+    "short": "반환의 분산을 줄이는 학습 신호",
+    "color": "teal",
+    "intro": "정책경사에서 행동 \\(a_t\\)는 그 뒤의 보상에만 인과적으로 영향을 준다. 따라서 시점 \\(t\\)의 점수함수에 전체 episode return 대신 reward-to-go \\(G_t=\\sum_{k=t}^{T}\\gamma^{k-t}r_k\\)를 곱해도 기대 gradient는 유지하면서 무관한 과거 보상이 만드는 분산을 줄인다.\n\n상태가치 \\(V^\\pi(s)=\\mathbb E[G_t\\mid s_t=s]\\), 행동가치 \\(Q^\\pi(s,a)=\\mathbb E[G_t\\mid s_t=s,a_t=a]\\), advantage \\(A^\\pi(s,a)=Q^\\pi(s,a)-V^\\pi(s)\\)는 서로 다른 질문에 답한다. 현재 상태가 평균적으로 좋은가(V), 이 행동을 선택했을 때 좋은가(Q), 같은 상태의 평균 행동보다 얼마나 나은가(A)다. 정책경사 정리에서는\n\n$$\n\n\nabla_\theta J=\\mathbb E_{s,a\\sim\\pi_\theta}[\nabla_\theta\\log\\pi_\theta(a\\mid s)Q^\\pi(s,a)].\n\n$$\n\n임의의 상태기반 baseline \\(b(s)\\)를 빼도 기대값이 바뀌지 않는다. 이유는 \\(\\mathbb E_{a\\sim\\pi}[\nabla\\log\\pi(a\\mid s)b(s)]=b(s)\nabla\\sum_a\\pi(a\\mid s)=0\\)이기 때문이다. \\(b=V\\)를 택하면 advantage를 얻는다. baseline은 분산을 줄이지만 부정확한 근사치를 쓰면 variance 감소 폭이 작아질 수 있다.\n\nActor–critic은 actor가 정책을, critic이 가치함수를 학습한다. critic이 trajectory return의 noisy label 대신 bootstrap target을 제공하면 표본 효율을 높일 수 있지만, critic 오차가 actor 업데이트에 편향을 전달한다. 작은 step을 여러 번 사용할지, 추정 편향을 얼마나 감수할지가 핵심 설계 선택이다.",
+    "sources": [
+      [
+        "Sutton & Barto, Reinforcement Learning: An Introduction",
+        "https://incompleteideas.net/book/the-book-2nd.html"
+      ],
+      [
+        "Schulman et al., High-Dimensional Continuous Control Using Generalized Advantage Estimation",
+        "https://arxiv.org/abs/1506.02438"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 7,
+        "label": "정책경사 복습",
+        "note": "trajectory 미분에서 시간별 정책 로그확률이 나타나는 이유를 다시 연결한다. 이번 장의 목표는 gradient 공식을 바꾸는 것이 아니라, 각 행동에 곱하는 return 신호의 분산을 낮추는 것이다."
+      },
+      {
+        "from": 8,
+        "to": 10,
+        "label": "기댓값과 reward-to-go",
+        "note": "로그미분 항등식 \\(\nabla p=p\nabla\\log p\\)와 tower property가 핵심이다. 미래 반환만 사용하는 것이 왜 unbiased인지 보이려면, 현재 행동과 무관한 과거 보상 항의 조건부 기댓값이 score의 평균 0과 곱해져 사라짐을 확인한다."
+      },
+      {
+        "from": 11,
+        "to": 14,
+        "label": "가치함수 정의와 Bellman 관계",
+        "note": "Q는 첫 행동을 고정한 뒤 따르는 정책의 기대 반환이고, V는 정책 행동에 대해 Q를 평균한 값이다. TD 잔차 \\(\\delta_t=r_t+\\gamma V(s_{t+1})-V(s_t)\\)는 한 단계 bootstrap target과 현재 예측의 차이다."
+      },
+      {
+        "from": 15,
+        "to": 23,
+        "label": "가치 추정과 할인",
+        "note": "Monte Carlo는 실현 반환을 직접 맞추어 편향이 작지만 분산이 크다. TD는 다음 상태의 예측값으로 bootstrap해 분산을 낮추지만 critic 오차를 전달한다. \\(\\gamma\\)는 미래를 얼마나 중시하는지 정하며, 단순히 수치 안정화 상수로만 보면 안 된다."
+      },
+      {
+        "from": 24,
+        "to": 30,
+        "label": "Baseline에서 advantage로",
+        "note": "상태만의 함수인 baseline은 행동 평균을 바꾸지 않으므로 policy-gradient 기대값을 보존한다. \\(A=Q-V\\)는 절대 보상의 크기 대신 같은 상태에서의 상대적 이득을 준다. baseline을 action에도 의존하게 만들면 일반적으로 영기대 항등식이 깨질 수 있다."
+      },
+      {
+        "from": 31,
+        "to": 35,
+        "label": "Actor–critic의 데이터 흐름",
+        "note": "actor는 \\(\nabla\\log\\pi\\) 방향으로 advantage가 큰 행동의 확률을 높이고, critic은 상태 또는 행동 가치를 회귀한다. on-policy actor–critic은 새 궤적을 계속 요구할 수 있고, critic 재사용은 효율과 추정 편향 사이의 절충이다."
+      }
+    ]
+  },
+  {
+    "id": "03-2",
+    "source": "DRL_03-2_ppo.pdf",
+    "title": "GAE와 Proximal Policy Optimization",
+    "short": "분산을 관리하고 정책 변화를 제한",
+    "color": "amber",
+    "intro": "N-step 반환은 일부 실제 보상을 더한 뒤 마지막 상태가치로 bootstrap한다. \\(n\\)이 길어지면 bootstrap 편향은 줄어드는 경향이 있지만 Monte Carlo에 가까워져 분산이 커진다. Generalized Advantage Estimation(GAE)은 TD 잔차 \\(\\delta_t=r_t+\\gamma V(s_{t+1})-V(s_t)\\)의 지수 가중합으로 이 절충을 제어한다.\n\n$$\n\n\\hat A_t^{GAE(\\gamma,\\lambda)}=\\sum_{l=0}^{\\infty}(\\gamma\\lambda)^l\\delta_{t+l}.\n\n$$\n\n\\(\\lambda=0\\)이면 한 단계 TD 잔차에 가깝고, \\(\\lambda=1\\)이면 종료까지 잔차를 합쳐 Monte Carlo advantage와 연결된다(terminal 처리와 가치 근사 가정하에서). \\(\\lambda\\)는 단순한 성능 상수가 아니라 bias–variance 절충을 조절한다.\n\nPPO는 수집 정책과 현재 정책의 확률비 \\(r_t(\theta)=\\pi_\theta(a_t\\mid s_t)/\\pi_{old}(a_t\\mid s_t)\\)를 계산하고 clipped surrogate\n\n$$\n\nL^{CLIP}=\\mathbb E_t[\\min(r_t\\hat A_t,\\operatorname{clip}(r_t,1-\\epsilon,1+\\epsilon)\\hat A_t)]\n\n$$\n\n를 최대화한다. \\(\\hat A>0\\)일 때 확률비를 너무 크게 올리는 이득을 자르고, \\(\\hat A<0\\)일 때 너무 작게 내리는 이득을 잘라 한 번의 업데이트가 과도하게 멀어지는 것을 억제한다. 이것은 정책변화를 엄밀히 제한하는 hard constraint가 아니며, clipping만으로 학습이 안정하다고 보장되지 않는다. 가치 손실·엔트로피 보너스·정규화·batch 구성과 rollout 길이도 함께 영향을 준다.",
+    "sources": [
+      [
+        "Schulman et al., Proximal Policy Optimization Algorithms",
+        "https://arxiv.org/abs/1707.06347"
+      ],
+      [
+        "Ouyang et al., Training language models to follow instructions with human feedback",
+        "https://arxiv.org/abs/2203.02155"
+      ],
+      [
+        "Tassa et al., dm_control",
+        "https://deepmind.google/blog/dm-control-software-and-tasks-for-continuous-control/"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 6,
+        "label": "Actor–critic과 표본 재사용",
+        "note": "기존 on-policy 방법은 정책을 바꾸면 수집 자료가 현재 정책의 분포와 어긋난다. PPO는 하나의 rollout batch로 여러 minibatch epoch를 허용하되, 새 정책이 수집 정책에서 과도하게 벗어날 때 목적함수의 추가 이득을 제한한다."
+      },
+      {
+        "from": 7,
+        "to": 10,
+        "label": "N-step과 GAE 유도",
+        "note": "N-step target은 \\(r_t+\\gamma r_{t+1}+\\cdots+\\gamma^{n-1}r_{t+n-1}+\\gamma^nV(s_{t+n})\\)이다. 각 n-step 추정의 혼합은 TD 잔차의 가중합으로 정리된다. 경계에서 terminal이면 bootstrap을 끄고, time-limit truncation이면 실제 task 종료인지 구분한다."
+      },
+      {
+        "from": 11,
+        "to": 15,
+        "label": "Importance sampling",
+        "note": "옛 정책에서 뽑은 행동의 새 정책 기대값은 확률비로 재가중할 수 있다. 비율의 곱은 시간 길이에 따라 분산이 폭증할 수 있고, 데이터에서 드문 행동의 가중치가 매우 커질 수 있다. PPO는 이를 실용적으로 완화하지만 전체 trajectory importance sampling을 정확히 수행하는 것은 아니다."
+      },
+      {
+        "from": 16,
+        "to": 20,
+        "label": "PPO clipped objective",
+        "note": "확률비와 advantage 부호를 각각 놓고 min·clip이 어느 항을 선택하는지 확인한다. clip은 gradient 이득을 평평하게 만드는 surrogate clipping이지 새 확률분포를 clip하는 연산이 아니다. 작은 \\(\\epsilon\\)이 항상 좋지는 않으며 업데이트가 지나치게 보수적일 수 있다."
+      },
+      {
+        "from": 21,
+        "to": 27,
+        "label": "응용과 알고리즘 맥락",
+        "note": "로봇 조립·보행·언어모델 선호 최적화는 PPO가 쓰인 사례지만, 사례의 성공을 알고리즘만의 공으로 해석하면 안 된다. 보상 설계, 시뮬레이터, 데이터, 정책 구조와 안전 제약이 함께 작동한다. PPO는 단순하고 튼튼한 기본선이지만 sample-efficient하다는 뜻은 아니다."
+      }
+    ]
+  },
+  {
+    "id": "04-1",
+    "source": "DRL_04-1_q_learning.pdf",
+    "title": "Q-learning, DQN과 Rainbow",
+    "short": "행동가치의 Bellman 최적성으로 학습",
+    "color": "blue",
+    "intro": "가치기반 방법은 각 상태·행동의 장기 결과를 Q 함수로 추정한 뒤 높은 Q를 주는 행동을 고른다. 최적 행동가치의 Bellman 식은 \\(Q^*(s,a)=\\mathbb E[r+\\gamma\\max_{a'}Q^*(s',a')]\\)다. 학습에서는 target \\(y=r+\\gamma\\max_{a'}Q_{target}(s',a')\\)에 현재 \\(Q_\theta(s,a)\\)를 맞추는 TD 회귀를 한다. \\(\\max\\)가 탐험과 정책 선택을 분리하고, Q-learning을 off-policy control로 만든다.\n\n신경망 Q-learning은 연속 표본 상관과 moving target에 취약하다. replay buffer는 과거 transition을 섞어 표본 상관을 낮추고 데이터 재사용을 돕는다. target network는 목표 계산을 느리게 바꾸어 최적화 대상의 진동을 줄인다. 하지만 둘 모두 안정성을 돕는 장치이지 수렴을 보증하는 해결책은 아니다.\n\nmax 연산은 잡음이 있는 추정값 중 가장 큰 것을 선택해 과대추정한다. Double DQN은 온라인 네트워크가 행동을 선택하고 target 네트워크가 그 행동을 평가해 선택과 평가의 오차를 분리한다. 이후 N-step return, prioritized replay, dueling network, distributional value 등을 결합한 Rainbow가 구성된다. Distributional RL은 기대값 하나 대신 가능한 반환의 분포 \\(Z(s,a)\\)를 학습한다. 기대값은 여전히 행동 선택 기준으로 쓸 수 있지만 위험 민감 목표라면 분포 자체의 정보가 유용하다.",
+    "sources": [
+      [
+        "Mnih et al., Human-level control through deep reinforcement learning",
+        "https://www.nature.com/articles/nature14236"
+      ],
+      [
+        "van Hasselt et al., Deep Reinforcement Learning with Double Q-learning",
+        "https://arxiv.org/abs/1509.06461"
+      ],
+      [
+        "Hessel et al., Rainbow",
+        "https://arxiv.org/abs/1710.02298"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 9,
+        "label": "정책평가에서 Q-learning으로",
+        "note": "정책 반복과 가치 반복은 평가와 개선을 번갈아 수행한다. Q-learning은 target의 다음 행동에 현재 정책 행동을 쓰지 않고 \\(\\max_{a'}\\)를 쓰므로 behavior policy가 탐험을 하더라도 greedy 목표로 학습한다. terminal transition에는 할인된 다음 Q를 더하지 않는다."
+      },
+      {
+        "from": 10,
+        "to": 17,
+        "label": "DQN 안정화: replay와 target network",
+        "note": "시계열 이웃 샘플의 gradient가 비슷하면 SGD의 독립 표본 가정이 약해진다. replay buffer의 무작위 minibatch는 상관을 완화하고, target network는 bootstrapping target이 매 스텝 급격히 움직이는 현상을 완화한다. 이 둘은 서로 다른 병목을 겨냥한다."
+      },
+      {
+        "from": 18,
+        "to": 21,
+        "label": "탐험과 Atari 사례",
+        "note": "ε-greedy는 대부분 현재 greedy 행동을 선택하고 확률 ε로 무작위 행동을 택한다. ε는 학습 스케줄 및 평가 모드와 구분한다. frame skip은 관측·행동 빈도를 낮춰 계산을 줄이지만 빠른 사건을 놓칠 수 있다."
+      },
+      {
+        "from": 22,
+        "to": 28,
+        "label": "Double DQN과 과대추정",
+        "note": "잡음 있는 추정치 \\(\\hat Q_a=Q_a+\\varepsilon_a\\) 중 최댓값의 기대는 보통 실제 최대보다 크다. 선택과 평가를 같은 추정기로 하면 선택된 양의 잡음도 평가에 들어간다. Double DQN target은 \\(r+\\gamma Q_{target}(s',\\arg\\max_a Q_{online}(s',a))\\)다."
+      },
+      {
+        "from": 29,
+        "to": 33,
+        "label": "Rainbow 구성 요소",
+        "note": "N-step return은 더 긴 실제 보상을 포함하고, prioritized replay는 TD-error가 큰 표본을 더 자주 학습한다. 비균등 샘플링으로 생기는 편향은 importance weight로 보정할 수 있다. dueling head는 상태 가치와 행동 이점을 분리해 행동 간 차이를 학습한다."
+      },
+      {
+        "from": 34,
+        "to": 41,
+        "label": "Distributional RL과 Rainbow",
+        "note": "C51은 반환을 고정된 support 위의 categorical 분포로 근사하고 Bellman projection으로 target 분포를 옮긴다. 여기서 51은 상태 수가 아니라 반환값을 표현하는 atom의 수다. Rainbow는 여러 개선을 결합하므로 성능 향상을 단일 기법 하나에 귀속하지 않는다."
+      },
+      {
+        "from": 42,
+        "to": 42,
+        "label": "연속 행동으로의 전환",
+        "note": "이산 행동이면 모든 행동의 Q를 계산하고 최대를 고를 수 있지만 연속 행동에서는 무한한 후보의 최적화가 필요하다. 다음 강의의 actor network는 Q를 크게 만드는 행동을 직접 제안한다."
+      }
+    ]
+  },
+  {
+    "id": "05-1",
+    "source": "DRL_05-1_off_policy_rl.pdf",
+    "title": "연속 제어: DDPG, TD3, SAC",
+    "short": "결정론적 actor에서 최대 엔트로피 정책까지",
+    "color": "teal",
+    "intro": "연속 행동 공간에서는 매 상태에서 \\(\\arg\\max_aQ(s,a)\\)를 격자 탐색할 수 없다. DDPG는 actor \\(\\mu_\theta(s)\\)가 행동을 제안하고 critic \\(Q_\\phi(s,a)\\)가 평가하도록 해, chain rule로 \\(\nabla_\theta J\\approx\\mathbb E[\nabla_aQ_\\phi(s,a)|_{a=\\mu(s)}\nabla_\theta\\mu_\theta(s)]\\)를 계산한다. replay buffer와 target actor/critic을 사용하는 off-policy actor–critic이다. 결정론적 정책은 탐험이 별도 잡음에 의존한다.\n\nDDPG critic의 max target은 Q 과대추정과 actor의 exploit에 취약하다. TD3는 clipped double Q로 두 critic 중 작은 값을 사용하고, target policy smoothing으로 target 행동에 제한된 잡음을 더하며, delayed policy update로 critic이 더 자주 학습되게 한다. 이는 세 장치가 각각 과대추정·좁은 Q 오류·actor-critic 시간척도 문제를 겨냥한다.\n\nSAC는 확률적 정책과 엔트로피 보너스를 통해 기대 보상과 행동의 무작위성을 함께 최적화한다. 목적식은 \\(\\mathbb E[\\sum_t r_t+\\alpha\\mathcal H(\\pi(\\cdot\\mid s_t))]\\)다. 온도 \\(\\alpha\\)가 보상과 엔트로피의 상대 비중을 정한다. SAC는 탐험을 정책 분포 안에 넣지만, 엔트로피가 항상 유익한 것은 아니며 학습 후 평가 시 샘플링 또는 평균 행동을 어떻게 사용할지도 정해야 한다.",
+    "sources": [
+      [
+        "Lillicrap et al., DDPG",
+        "https://arxiv.org/abs/1509.02971"
+      ],
+      [
+        "Fujimoto et al., TD3",
+        "https://arxiv.org/abs/1802.09477"
+      ],
+      [
+        "Haarnoja et al., Soft Actor-Critic",
+        "https://arxiv.org/abs/1812.05905"
+      ],
+      [
+        "KAIST RAILab, learning-based legged robot control",
+        "https://railab.kaist.ac.kr/sections/research.html"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 12,
+        "label": "DQN에서 연속 제어로",
+        "note": "DQN은 행동 수가 작고 유한할 때 출력층에서 모든 Q값을 계산한다. 연속 행동에서는 매번 고차원 최적화가 필요하므로 actor가 optimizer 역할을 신경망으로 근사한다. target network와 replay buffer는 그대로 중요하지만 정책 자체도 target으로 관리한다."
+      },
+      {
+        "from": 13,
+        "to": 19,
+        "label": "DDPG의 actor–critic 업데이트",
+        "note": "critic은 Bellman target에 회귀하고 actor는 critic의 행동 기울기를 따라 Q를 높인다. actor gradient는 \\(Q(s,\\mu_\theta(s))\\)에 chain rule을 적용한 것이다. action exploration noise는 행동 수집용이며 정책 분포의 entropy와는 구분된다. soft target update는 \\(\bar\\phi\\leftarrow(1-\tau)\bar\\phi+\tau\\phi\\)처럼 천천히 추적한다."
+      },
+      {
+        "from": 20,
+        "to": 25,
+        "label": "TD3의 세 안정화 장치",
+        "note": "clipped double Q는 두 target critic의 최소값, target smoothing은 다음 행동 주변의 국소 평균화, delayed update는 critic에 더 많은 보정 기회를 준다. 작은 편향을 받아 큰 과대추정 편향을 줄이는 trade-off다. DDPG와 TD3 모두 deterministic actor이므로 탐험 전략이 필요하다."
+      },
+      {
+        "from": 26,
+        "to": 35,
+        "label": "최대 엔트로피와 SAC",
+        "note": "엔트로피 \\(\\mathcal H(\\pi)=-\\mathbb E[\\log\\pi(a\\mid s)]\\)가 높으면 정책이 여러 행동에 확률을 분산한다. SAC의 soft Q는 미래 보상에 entropy value를 포함하며, twin critics와 target을 사용한다. 자동 온도 조정은 목표 entropy에 맞추어 \\(\\alpha\\)를 학습한다. 이는 reward scale과 무관한 상수가 아니다. 국내 RAILab의 사족보행 제어 연구는 거칠고 미끄럽거나 변형되는 지면에서 실험해 모델 오차가 있는 현실 환경의 강건성을 다룬다. 시뮬레이터에서 평균 return만 높이는 것과 실물에서 낙상·접촉·센서 지연을 견디는 것은 별도의 검증 문제다."
+      },
+      {
+        "from": 36,
+        "to": 37,
+        "label": "알고리즘 선택 관점",
+        "note": "같은 환경도 action 차원, 데이터 재사용 가능성, reward scale, 계산 예산, 탐험 요구가 달라 최선의 방법이 달라진다. 성능 곡선의 평균과 분산, 상호작용 횟수를 함께 비교하고 단일 성공 사례로 일반화하지 않는다."
+      }
+    ]
+  },
+  {
+    "id": "05-2",
+    "source": "DRL_05-2_rl_benchmarks.pdf",
+    "title": "RL 실험과 벤치마크",
+    "short": "성능 숫자를 신뢰할 수 있게 비교하기",
+    "color": "amber",
+    "intro": "RL 알고리즘 비교에는 최종 성능(asymptotic performance)과 표본 효율(sample efficiency)을 구분해야 한다. 학습 환경에서의 보상뿐 아니라 별도 평가 에피소드의 return, 학습 곡선, 여러 난수 시드의 분산을 보고한다. 같은 상호작용 수인지 gradient update 수인지 기준을 명시하지 않으면 데이터 효율 비교가 성립하지 않는다.\n\n벤치마크는 표준화된 환경과 과업으로 비교의 재현성을 높이지만, benchmark 점수가 실제 배치 성능을 보증하지는 않는다. Atari는 이산 행동과 영상 관측, MuJoCo·DeepMind Control Suite는 연속 물리 제어, LIBERO·RoboTwin은 로봇 조작과 과업 전이, RoboArena는 정책 선호 비교 등을 강조한다. 서로 다른 benchmark는 관측·행동·보상·데이터 조건이 달라 한 줄의 순위로 뭉치기 어렵다.\n\n평가 시 학습 시드, environment seed, 정규화 점수, 실패/성공 정의, 코드·환경 버전을 기록한다. 여러 과업 평균만 보고하면 특정 과업의 실패가 숨겨질 수 있으므로 분포나 과업별 결과도 살핀다. 사람의 선호 비교는 주관적이고 평가자·프롬프트에 민감하므로 자동 보상과 함께 해석한다.",
+    "sources": [
+      [
+        "Agarwal et al., Deep RL at the Edge of the Statistical Precipice",
+        "https://arxiv.org/abs/2108.13264"
+      ],
+      [
+        "Farama Gymnasium environments",
+        "https://gymnasium.farama.org/"
+      ],
+      [
+        "DeepMind Control Suite",
+        "https://github.com/google-deepmind/dm_control"
+      ],
+      [
+        "LIBERO benchmark",
+        "https://libero-project.github.io/"
+      ],
+      [
+        "RoboTwin project",
+        "https://robotwin-platform.github.io/"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 3,
+        "label": "평가 지표와 환경군",
+        "note": "asymptotic return은 충분히 학습한 뒤의 도달 성능, sample efficiency는 같은 환경 상호작용 예산에서 얼마나 빨리 성능에 도달하는지다. DMC·Gymnasium·Atari·MiniGrid는 행동 공간과 시각 복잡도, horizon이 다르므로 지표와 조건을 맞추어 비교한다."
+      },
+      {
+        "from": 4,
+        "to": 6,
+        "label": "고전적 벤치마크",
+        "note": "Gym 계열과 DeepMind Control Suite는 연속 제어 실험을 재현하는 표준 과업을 제공하고, Atari는 영상 입력 기반 이산 제어를 시험한다. 환경 버전, wrapper, frame skip, observation normalization을 바꾸면 결과가 달라질 수 있다."
+      },
+      {
+        "from": 7,
+        "to": 13,
+        "label": "로봇·VLA 평가",
+        "note": "LIBERO는 지식 전이와 lifelong manipulation, RoboTwin은 시뮬레이션 로봇·과업 변형, RoboArena는 인간 선호 평가를 포함한다. 시뮬레이션에서 성공해도 실제 로봇의 접촉·마찰·카메라 지연 차이 때문에 sim-to-real gap이 남는다. 여러 시드와 물리적 반복 시험이 필요하다."
+      }
+    ]
+  },
+  {
+    "id": "06",
+    "source": "DRL_06_offline_rl.pdf",
+    "title": "Offline RL: 정적 데이터에서 정책 개선",
+    "short": "분포 이동을 다루는 보수적 학습",
+    "color": "blue",
+    "intro": "Offline RL은 고정된 데이터셋 \\(\\mathcal D=\\{(s,a,r,s')\\}\\)만으로 정책을 학습한다. 위험하거나 비싼 환경에서 새 상호작용을 피하고 과거 데이터를 재사용할 수 있다. 행동 복제와 달리 보상을 사용해 데이터에 있는 행동보다 나은 정책을 찾으려 한다. 어려움은 최적화된 정책이 데이터에 거의 없던 행동을 선택하고, 그 행동의 Q값을 신경망이 근거 없이 크게 예측하는 데서 생긴다. 이를 distribution shift와 extrapolation error라고 한다.\n\n일반 off-policy Q-learning target \\(r+\\gamma\\max_{a'}Q(s',a')\\)는 데이터에 없는 다음 행동을 최대화할 수 있다. 과대평가된 OOD 행동은 max 연산으로 선택되기 쉽고, bootstrapping으로 그 오류가 다음 상태들에 전파된다. 데이터에 가까운 정책을 유지하는 TD3+BC, OOD Q를 낮추는 보수적 Q-learning(CQL), 좋은 궤적만 모방하는 filtered BC, advantage에 비례해 행동을 가중하는 AWR가 서로 다른 완화책이다.\n\nCQL은 Bellman 오차에 데이터 밖 행동의 Q를 낮추는 정규화 항을 추가한다. 이산 행동에서 entropy regularizer를 포함한 최적화는 log-sum-exp 항 \\(\\log\\sum_a\\exp Q(s,a)\\)으로 정리된다. 이 항은 큰 Q를 주는 행동에 특히 민감하며, 데이터 행동의 값과 비교해 OOD 영역의 과도한 낙관성을 누른다. 너무 강하면 과도하게 비관적이어서 정책 개선을 막는다.\n\nIQL은 학습 중 데이터 밖 행동에 Q를 질의하지 않도록 설계한다. 데이터 행동들의 Q 분포에서 expectile regression으로 좋은 행동 쪽의 상태가치 \\(V(s)\\)를 맞추고, 이를 TD target으로 Q를 학습한 뒤 advantage-weighted behavioral cloning으로 정책을 추출한다. expectile \\(\tau>0.5\\)는 큰 잔차에 더 큰 가중을 주어 상위 행동의 가치를 추정한다. 이는 데이터 밖 행동값을 직접 평가하지 않는다는 뜻이지, 데이터가 전혀 담지 않은 전략을 보장된 방식으로 발명한다는 뜻은 아니다.",
+    "sources": [
+      [
+        "Fu et al., D4RL",
+        "https://arxiv.org/abs/2004.07219"
+      ],
+      [
+        "Park et al., OGBench",
+        "https://arxiv.org/abs/2410.20092"
+      ],
+      [
+        "Fujimoto & Gu, TD3+BC",
+        "https://arxiv.org/abs/2106.06860"
+      ],
+      [
+        "Kumar et al., Conservative Q-Learning",
+        "https://arxiv.org/abs/2006.04779"
+      ],
+      [
+        "Peng et al., Advantage-Weighted Regression",
+        "https://arxiv.org/abs/1910.00177"
+      ],
+      [
+        "Kostrikov et al., Implicit Q-Learning",
+        "https://arxiv.org/abs/2110.06169"
+      ]
+    ],
+    "ranges": [
+      {
+        "from": 1,
+        "to": 7,
+        "label": "Offline RL의 정의와 필요",
+        "note": "offline은 데이터를 새로 수집하지 않고 고정 데이터로 학습한다는 뜻이다. on-policy/off-policy는 target policy와 behavior policy의 관계를 가리키며, online/offline은 환경 상호작용 여부를 가리킨다. 이 두 분류 축을 혼동하지 않는다. dataset에 성공·실패, 상태 coverage, 행동 품질이 어떤 비율로 들어 있는지 먼저 감사한다."
+      },
+      {
+        "from": 8,
+        "to": 10,
+        "label": "분포 이동과 부트스트랩 오류",
+        "note": "OOD는 입력이 단순히 숫자상 극단이라는 뜻이 아니라 학습 데이터 분포의 support에서 벗어났다는 뜻이다. max Q는 신뢰할 수 없는 후보 중 큰 추정치를 고른다. 그 값이 Bellman target에 반복 투입되면 값 오류가 연쇄적으로 확산된다."
+      },
+      {
+        "from": 11,
+        "to": 12,
+        "label": "TD3+BC: 정책 제약",
+        "note": "행동 복제 항과 Q 최대화 항의 가중합으로 actor를 갱신해 데이터 행동에서 너무 멀어지지 않게 한다. Q 항의 scale을 정규화하는 이유는 보상 단위가 BC와 RL 항의 상대 가중을 임의로 바꾸지 않도록 하기 위해서다. 데이터가 낮은 품질이면 강한 복제가 개선을 막을 수 있다."
+      },
+      {
+        "from": 13,
+        "to": 18,
+        "label": "CQL: 보수적 Q 추정",
+        "note": "CQL은 데이터 행동의 Q는 맞추고, 상태에서 표본화한 후보 행동의 Q는 보수적으로 낮춘다. log-sum-exp는 큰 후보 Q에 큰 가중을 주는 smooth maximum이다. 정규화 강도는 낙관성 억제와 유용한 정책 개선 사이를 조절한다. 이론적 하한 성질은 특정 가정과 설정 아래 성립하며 임의의 함수근사·데이터에서 자동 보장되는 것은 아니다."
+      },
+      {
+        "from": 19,
+        "to": 25,
+        "label": "Offline RL 평가와 OOD 행동",
+        "note": "D4RL과 OGBench는 데이터 품질·coverage·목표 구조가 다른 오프라인 과업을 비교한다. 데이터에 없는 행동에서 Q가 얼마나 잘 맞는지는 직접 정답을 알기 어렵다. 높은 offline return 예측치만 보고 성공을 선언하지 말고 normalized score, 여러 데이터 regime, online fine-tuning 가능 여부와 재현성을 함께 본다."
+      },
+      {
+        "from": 26,
+        "to": 30,
+        "label": "Filtered BC와 AWR",
+        "note": "Filtered BC는 trajectory return으로 상위 데이터를 고른 뒤 모방하므로 보상 크기 순위만 이용한다. AWR은 \\(\\exp(A/\beta)\\)로 transition별 log-likelihood를 가중해 상대적인 이득을 활용한다. 온도 \\(\beta\\)가 작으면 상위 사례에 집중하지만 작은 추정오차에 민감해진다."
+      },
+      {
+        "from": 31,
+        "to": 35,
+        "label": "IQL과 expectile 회귀",
+        "note": "SARSA식 target은 데이터에 저장된 다음 행동을 사용해 greedy OOD 행동을 평가하지 않는다. IQL의 expectile 손실은 잔차 \\(u=Q-V\\)의 부호에 따라 \\(\tau u^2\\) 또는 \\((1-\tau)u^2\\)를 적용한다. \\(\tau>0.5\\)면 높은 Q 표본이 V를 위쪽으로 끌어올리고, advantage weight가 큰 데이터 행동을 정책이 더 잘 모방한다."
+      },
+      {
+        "from": 36,
+        "to": 42,
+        "label": "적용 분야와 핵심 정리",
+        "note": "로봇 사전학습, 핵융합·냉각 제어, 칩 설계처럼 온라인 탐색 비용이 큰 분야가 동기다. 하지만 정적 데이터 밖에서 정책을 시험할 수 없다면 실제 개선 여부를 보장하기 어렵다. 안전한 shadow evaluation, 보수적 배포, 제한된 online fine-tuning을 포함한 검증 설계가 필요하다."
+      }
+    ]
+  }
+]
