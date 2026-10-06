@@ -165,7 +165,7 @@ function texMarkdown(s){
   const line=lines[i].trim();if(!line){out.push('\\par\\medskip');continue;}
   if(line.startsWith('# ')){out.push('\\section*{'+texInline(line.slice(2))+'}');continue;}
   if(line.startsWith('## ')){out.push('\\subsection{'+texInline(line.slice(3))+'}');continue;}
-  if(line==='$$'){const eq=[];i++;while(i<lines.length&&lines[i].trim()!=='$$')eq.push(lines[i++]);out.push('\\begin{equation*}',...eq,'\\end{equation*}');continue;}
+  if(line==='$$'){const eq=[];i++;while(i<lines.length&&lines[i].trim()!=='$$'){if(lines[i].trim())eq.push(lines[i]);i++;}out.push('\\begin{equation*}',...eq,'\\end{equation*}');continue;}
   out.push(texInline(line)+'\\par');
  }return out.join('\n');
 }
