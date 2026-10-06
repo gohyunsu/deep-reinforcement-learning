@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 285" role="img" aria-labelledby="t d">
+  <title id="t">오프라인 데이터 지지와 미관측 행동</title><desc id="d">중앙의 기록된 행동 구간 밖에서는 가치 예측을 검증할 자료가 없다.</desc>
+  <rect width="760" height="285" rx="12" fill="#fff"/>
+  <text x="32" y="39" font-size="19" font-weight="700" fill="#17243a">데이터 밖 행동의 Q는 직접 검증되지 않는다</text>
+  <rect x="242" y="75" width="242" height="147" rx="8" fill="#e6f1f0"/>
+  <path d="M64 222H710M64 222V63" fill="none" stroke="#889eaa" stroke-width="2"/>
+  <path d="M89 194C166 173 206 153 258 156S345 115 418 142S524 142 570 93S640 73 690 92" fill="none" stroke="#244f82" stroke-width="4"/>
+  <path d="M484 143C521 155 552 114 578 83S650 52 689 76" fill="none" stroke="#b46e29" stroke-width="3" stroke-dasharray="6 5"/>
+  <text x="363" y="256" text-anchor="middle" font-size="15" fill="#146d70">기록된 행동의 범위</text>
+  <text x="605" y="129" font-size="14" fill="#a36324">미관측: 불확실</text>
+  <text x="81" y="81" font-size="14" fill="#5e6d80">추정 Q</text>
+  <text x="700" y="245" font-size="14" fill="#5e6d80">행동 a</text>
+</svg>

@@ -1,43 +1,29 @@
-# Deep Reinforcement Learning · 슬라이드별 학습 가이드
+# Deep Reinforcement Learning
 
-**[학습 사이트](https://gohyunsu.github.io/deep-reinforcement-learning/)** · **[PDF 학습 가이드](https://gohyunsu.github.io/deep-reinforcement-learning/study-guide.pdf)**
+[학습 사이트](https://gohyunsu.github.io/deep-reinforcement-learning/)
 
-순차적 의사결정의 수학적 기초에서 imitation learning, policy gradient, actor–critic, PPO, Q-learning, continuous control, benchmark, offline RL까지 이어지는 한국어 학습 자료입니다. 10개 강의 묶음, 339개 슬라이드의 이미지와 설명을 나란히 읽을 수 있습니다.
+강화학습의 순차 의사결정부터 모방학습, 정책경사, 가치 기반 방법, 오프라인 강화학습까지 연결하는 한국어 학습 가이드입니다. 10개 장의 339개 슬라이드에 각각 대응하는 이미지와 해설을 함께 배치했습니다. 수식의 전제와 유도, 직관, 구현에서 자주 혼동하는 부분, 실제 연구 사례를 본문에서 설명하며 필요한 곳에 추가 질문을 접어 두었습니다.
 
-## 학습 경로
+## 구성
 
-| 장 | 주제 | 슬라이드 |
-| --- | --- | ---: |
-| 01-1 | Deep RL의 문제와 응용 | 32 |
-| 01-2 | Imitation learning과 로봇 정책 | 50 |
-| 02-1 | MDP와 순차적 의사결정 | 41 |
-| 02-2 | Policy gradient와 REINFORCE | 20 |
-| 03-1 | 가치함수, advantage, actor–critic | 35 |
-| 03-2 | GAE와 PPO | 27 |
-| 04-1 | Q-learning, DQN, Rainbow | 42 |
-| 05-1 | DDPG, TD3, SAC | 37 |
-| 05-2 | 실험 설계와 RL 벤치마크 | 13 |
-| 06 | Offline RL: TD3+BC, CQL, AWR, IQL | 42 |
+| 장 | 주제 |
+| --- | --- |
+| 01-1 · 01-2 | 강화학습의 응용과 모방학습 |
+| 02-1 · 02-2 | MDP와 정책경사 |
+| 03-1 · 03-2 | Actor–Critic, GAE, PPO |
+| 04-1 | Q-learning, DQN, Rainbow |
+| 05-1 · 05-2 | DDPG, TD3, SAC와 벤치마크 |
+| 06 | 오프라인 강화학습 |
 
-각 슬라이드는 강의 이미지와 기본 설명을 함께 보여 줍니다. 확률·기대값·Bellman 방정식·정책경사·importance sampling·GAE·Q-learning 목표·보수적 가치 추정은 필요한 전제부터 차근차근 전개합니다. 오개념과 후속 질문처럼 보충이 필요한 내용만 선택해 펼쳐 읽을 수 있습니다.
+[과제 1](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw1.html)은 행동 복제와 DAgger, [과제 2](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw2.html)는 정책경사부터 PPO까지의 구현과 평가를 다룹니다. 해당 개념을 설명하는 슬라이드 아래에서도 과제 가이드로 이동할 수 있습니다.
 
 ## 프로젝트 구조
 
-- `content/` — 장별 학습 원고 및 슬라이드 목차
-- `guide/main.tex` — 전체 LaTeX 문서 원본
-- `docs/` — GitHub Pages 정적 사이트와 슬라이드 렌더링
-- `tools/` — 사이트·문서 생성, 검사, PDF 렌더링 도구
-- `WORKLOG.md` — 구성 및 검증 기록
+- content/: 슬라이드별 본문, 장 목록, 과제 가이드
+- docs/: 정적 사이트와 개별 슬라이드 이미지
+- guide/main.tex: 사이트 본문과 같은 내용으로 생성한 LaTeX 문서
+- tools/build.mjs: 사이트 생성
+- tools/build_tex.py: LaTeX 문서 생성
+- tools/check.mjs: 이미지·페이지·내부 링크 검증
 
-강의 자료 PDF와 녹취 파일은 빌드 입력으로만 사용하며 저장소에 포함하지 않습니다. 사이트는 개별 페이지 이미지(WebP)만 제공합니다.
-
-## 로컬 실행
-
-Node.js 20 이상과 XeLaTeX를 사용합니다.
-
-```powershell
-npm install
-npm run build
-npm run check
-python -m http.server 8765 --directory docs
-```
+사이트와 PDF는 GitHub Actions에서 함께 생성하여 GitHub Pages에 게시합니다. 로컬에서 사이트만 생성할 때는 Node.js 24 이상에서 npm install과 npm run build를 실행합니다. PDF는 Python 3으로 tools/build_tex.py를 실행한 뒤 XeLaTeX로 guide/main.tex를 두 차례 컴파일합니다.

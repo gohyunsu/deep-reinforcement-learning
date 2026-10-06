@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" role="img" aria-labelledby="t d">
+  <title id="t">PPO clipping의 부호별 동작</title><desc id="d">양의 advantage는 비율 상단에서, 음의 advantage는 비율 하단에서 추가 이득을 제한한다.</desc>
+  <rect width="760" height="320" rx="12" fill="#fff"/>
+  <text x="30" y="37" font-size="19" font-weight="700" fill="#17243a">PPO-Clip: advantage의 부호에 따라 제한되는 쪽이 다르다</text>
+  <path d="M65 261H711M65 261V70" stroke="#889eaa" stroke-width="2" fill="none"/>
+  <path d="M124 251L352 77H669" stroke="#146d70" stroke-width="4" fill="none"/>
+  <path d="M124 99H307L671 262" stroke="#b46e29" stroke-width="4" fill="none"/>
+  <path d="M307 69V268M352 69V268" stroke="#b9cbd1" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <text x="307" y="288" text-anchor="middle" font-size="14" fill="#5e6d80">1−ε</text>
+  <text x="352" y="288" text-anchor="middle" font-size="14" fill="#5e6d80">1+ε</text>
+  <text x="697" y="289" font-size="14" fill="#5e6d80">비율 r</text>
+  <rect x="481" y="72" width="14" height="5" fill="#146d70"/>
+  <text x="503" y="79" font-size="15" fill="#146d70">A &gt; 0: 상단에서 평평</text>
+  <rect x="481" y="108" width="14" height="5" fill="#b46e29"/>
+  <text x="503" y="115" font-size="15" fill="#a36324">A &lt; 0: 하단에서 평평</text>
+  <text x="74" y="63" font-size="13" fill="#5e6d80">표본 목적항</text>
+</svg>

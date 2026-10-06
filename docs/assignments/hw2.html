@@ -1,0 +1,97 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Deep Reinforcement Learning — 슬라이드별 한국어 학습 가이드"><title>과제 2 · 정책경사와 PPO · Deep Reinforcement Learning</title><link rel="stylesheet" href="../assets/site.css"><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script></head><body data-prefix="../"><div class="reading-progress" aria-hidden="true"></div><header class="site-header"><a class="brand" href="../index.html"><span class="brand-mark">π</span><span class="brand-title">Deep Reinforcement Learning</span></a><a class="pdf-link" href="../study-guide.pdf" download>PDF 가이드 ↓</a><button type="button" class="search-trigger" data-search-trigger aria-label="전체 검색 열기"><span>⌕</span> 검색 <kbd>/</kbd></button></header><div class="layout"><aside class="sidebar"><a class="sidebar-home" href="../index.html">← 전체 목차</a><div class="sidebar-label">강의</div><nav aria-label="강의 목록" class="chapter-nav"><a class="chapter-link " href="../lecture/01-1.html"><span class="chapter-num">01-1</span><span><strong>강화학습이 필요한 이유</strong><small>순차 결정의 문제와 응용</small></span><span class="chapter-count">32</span></a><a class="chapter-link " href="../lecture/01-2.html"><span class="chapter-num">01-2</span><span><strong>모방학습과 로봇 정책</strong><small>BC, DAgger, ACT와 확산 정책</small></span><span class="chapter-count">50</span></a><a class="chapter-link " href="../lecture/02-1.html"><span class="chapter-num">02-1</span><span><strong>강화학습의 수학적 기초</strong><small>MDP, 정책, 보상과 상태</small></span><span class="chapter-count">41</span></a><a class="chapter-link " href="../lecture/02-2.html"><span class="chapter-num">02-2</span><span><strong>정책경사와 REINFORCE</strong><small>로그미분과 표본 기울기</small></span><span class="chapter-count">20</span></a><a class="chapter-link " href="../lecture/03-1.html"><span class="chapter-num">03-1</span><span><strong>가치함수와 Actor–Critic</strong><small>reward-to-go, baseline과 advantage</small></span><span class="chapter-count">35</span></a><a class="chapter-link " href="../lecture/03-2.html"><span class="chapter-num">03-2</span><span><strong>GAE와 PPO</strong><small>편향·분산 절충과 안정적 정책 갱신</small></span><span class="chapter-count">27</span></a><a class="chapter-link " href="../lecture/04-1.html"><span class="chapter-num">04-1</span><span><strong>Q-learning과 DQN</strong><small>Bellman 갱신, Double DQN과 Rainbow</small></span><span class="chapter-count">42</span></a><a class="chapter-link " href="../lecture/05-1.html"><span class="chapter-num">05-1</span><span><strong>연속 행동의 Off-policy RL</strong><small>DDPG, TD3와 SAC</small></span><span class="chapter-count">37</span></a><a class="chapter-link " href="../lecture/05-2.html"><span class="chapter-num">05-2</span><span><strong>강화학습 벤치마크</strong><small>게임, 시뮬레이션과 로봇 평가</small></span><span class="chapter-count">13</span></a><a class="chapter-link " href="../lecture/06.html"><span class="chapter-num">06</span><span><strong>Offline RL</strong><small>분포 이동, 보수적 가치와 IQL</small></span><span class="chapter-count">42</span></a></nav><div class="sidebar-label">과제</div><nav aria-label="과제 목록" class="chapter-nav"><a class="chapter-link " href="../assignments/hw1.html"><span class="chapter-num">HW1</span><span><strong>과제 1 · 모방학습</strong><small>행동 복제, 실험 평가, DAgger</small></span></a><a class="chapter-link is-current" href="../assignments/hw2.html"><span class="chapter-num">HW2</span><span><strong>과제 2 · 정책경사와 PPO</strong><small>reward-to-go, baseline, GAE, PPO-Clip</small></span></a></nav></aside><main class="lecture-main"><section class="lecture-hero assignment-hero"><div class="eyebrow">ASSIGNMENT GUIDE</div><h1>과제 2 · 정책경사와 PPO</h1><div class="lecture-intro"><p>reward-to-go, baseline, GAE, PPO-Clip</p></div></section><article class="assignment-content explanation"><p>이 과제는 하나의 정책경사 구현을 단계별로 개선한다. 전체 궤적 반환에서 reward-to-go로 옮기고, 상태 가치 baseline을 학습한 뒤, GAE로 advantage를 추정하고, PPO-Clip으로 같은 rollout을 여러 번 조심스럽게 사용한다. 모든 비교에서 <strong>평가 반환과 환경 상호작용 단계 수</strong>를 함께 본다.</p>
+<h2>연결되는 개념</h2>
+<ul>
+<li><a href="../lecture/02-2.html#s09">로그미분을 이용한 정책경사</a>: 환경 전이를 미분하지 않고 기대 반환의 기울기를 구한다.</li>
+<li><a href="../lecture/03-1.html#s10">Reward-to-go와 baseline</a>: 과거 보상을 빼고 상태 평균 성과를 기준으로 삼는다.</li>
+<li><a href="../lecture/03-2.html#s09">GAE</a>: 여러 길이의 TD 추정량을 결합한다.</li>
+<li><a href="../lecture/03-2.html#s16">PPO의 정책비</a>: 이전 정책에서 모은 데이터를 여러 번 사용할 때 갱신을 제한한다.</li>
+</ul>
+<h2>1. 전체 반환과 reward-to-go</h2>
+<p>현재 정책으로 궤적을 수집한 뒤 각 행동의 로그확률 기울기를 성과로 가중한다. 전체 반환 버전은 그 궤적의 총보상 <span class="math-inline">\(R(\tau)\)</span>를 모든 시점에 붙인다. reward-to-go는 시점 <span class="math-inline">\(t\)</span> 뒤의 보상만 더한 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>를 붙인다.</p>
+<div class="equation">\[\widehat g_{\mathrm{full}}
+=\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)R_i,
+\qquad
+\widehat g_{\mathrm{rtg}}
+=\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.\]</div>
+<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 다만 할인율을 어디에 곱하는지는 목적함수와 스타터 코드의 시간 인덱스 관례에 맞춰야 한다. 수식을 코드로 옮길 때 <span class="math-inline">\(t=0\)</span>에서 시작하는지와 마지막 보상이 어느 배열 위치에 있는지 먼저 확인한다.</p>
+<h2>2. CartPole 비교 실험</h2>
+<p>이산 행동 CartPole에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 <strong>각각</strong> 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계다.</p>
+<p>정규화는 한 batch의 advantage에서 평균을 빼고 표준편차로 나누는 연산이다. 값의 상대적 순서는 유지하면서 업데이트의 크기를 바꾸지만, 모든 환경에서 항상 이득이라는 보장은 없다. 비교할 때 학습률, 네트워크 구조와 평가 방법은 고정하고, 보고서에는 실제 실행한 명령 옵션을 남긴다.</p>
+<p>모든 학습 곡선의 가로축은 <strong>정책 업데이트 횟수보다 누적 환경 단계 수</strong>다. batch가 큰 방법은 한 번 업데이트 전에 더 많은 상호작용을 사용하므로 업데이트 횟수만 비교하면 표본 효율을 오해하기 쉽다.</p>
+<details><summary>큰 batch의 곡선이 매끄러우면 알고리즘이 더 좋은 것일까?</summary><p>큰 batch는 기울기 표본 분산을 줄일 수 있지만 업데이트당 환경 비용이 더 든다. 같은 환경 단계 수에서의 최종 성과와 여러 시드의 변동을 비교해야 공정하다.</p></details>
+
+<h2>3. 상태 가치 baseline</h2>
+<p>상태 가치 <span class="math-inline">\(V_\phi(s_t)\)</span>는 그 상태에서 현재 정책을 계속 따를 때의 기대 미래 보상이다. 정책 업데이트에는 <span class="math-inline">\(A_t=G_t-V_\phi(s_t)\)</span>를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.</p>
+<p>행동에 의존하지 않는 baseline의 기대 기여는</p>
+<div class="equation">\[E_{a\sim\pi_\theta(\cdot\mid s)}
+[\nabla_\theta\log\pi_\theta(a\mid s)V_\phi(s)]
+=V_\phi(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0\]</div>
+<p>이므로 정확한 기대 정책경사는 바뀌지 않는다. 다만 학습한 가치함수는 근사이고, 실제 구현에서 데이터 재사용·정규화·학습률이 분산과 편향에 영향을 줄 수 있다. 가치함수 손실의 하락과 정책 반환의 상승을 함께 봐야 한다.</p>
+<h2>4. HalfCheetah에서 baseline 평가</h2>
+<p>연속 제어 HalfCheetah에서는 reward-to-go 정책경사와 가치 baseline을 붙인 버전을 비교한다. 원본 실험 설정은 할인율 <span class="math-inline">\(0.95\)</span>, batch 5000, baseline 학습 단계 수와 학습률을 명시한다. baseline이 더 정확하면 advantage의 잡음이 줄 수 있지만, baseline을 지나치게 적게 또는 과하게 학습하면 정책 갱신이 흔들릴 수 있다.</p>
+<p>보고서에는 baseline 손실 곡선과 평가 반환 곡선을 함께 그린다. baseline gradient step 수나 학습률을 줄인 추가 실험에서는 다른 설정을 고정해야 원인을 비교할 수 있다. 손실이 내려갔다고 성과가 반드시 오르지는 않으므로 두 그래프를 나란히 해석한다.</p>
+<h2>5. GAE의 계산</h2>
+<p>한 단계 TD 잔차를 <span class="math-inline">\(\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)\)</span>라고 두면 GAE는 다음과 같다.</p>
+<div class="equation">\[\widehat A_t^{\mathrm{GAE}(\gamma,\lambda)}
+=\sum_{l=0}^{T-t-1}(\gamma\lambda)^l\delta_{t+l}
+=\delta_t+\gamma\lambda\widehat A_{t+1}.\]</div>
+<p>마지막 등식은 뒤에서 앞으로 반복 계산할 수 있게 한다. 진짜 종료라면 다음 상태 가치를 0으로 처리하고, 시간 제한으로 잘린 궤적이라면 부트스트랩 가능 여부를 환경 계약에 맞춰 결정한다. <span class="math-inline">\(\lambda=0\)</span>은 한 단계 TD에 가깝고 <span class="math-inline">\(\lambda=1\)</span>은 적절한 끝 처리에서 긴 보상열에 가까워진다. 두 극단은 가치 추정 오차가 주는 편향과 표본 반환의 변동 사이를 비교하는 기준이다.</p>
+<h2>6. HumanoidStandup의 <span class="math-inline">\(\lambda\)</span> 비교</h2>
+<p>HumanoidStandup에서는 <span class="math-inline">\(\lambda=0\)</span>, <span class="math-inline">\(0.95\)</span>, <span class="math-inline">\(1\)</span>을 같은 환경·네트워크·batch·학습률로 비교한다. 과제의 명시적인 과업 길이와 할인율을 유지해야 곡선의 차이를 <span class="math-inline">\(\lambda\)</span>에 연결할 수 있다. 한 그래프에 평가 반환과 누적 환경 단계를 표시하고, 어떤 값이 더 빨리 좋아졌으며 최종 성과와 변동이 어떠했는지 설명한다.</p>
+<p>단일 실행에서 특정 <span class="math-inline">\(\lambda\)</span>가 더 좋아 보인다고 일반적인 우위를 주장할 수는 없다. 가치함수의 품질, 보상의 지연, 에피소드 길이에 따라 유리한 편향–분산 절충이 달라진다.</p>
+<details><summary><span class="math-inline">\(\lambda=1\)</span>이면 가치함수를 전혀 쓰지 않나?</summary><p>완전한 episode의 끝까지 모두 관측하고 끝에서 부트스트랩하지 않으면 GAE의 망원합이 Monte Carlo 반환에서 현재 가치 추정치를 뺀 형태가 된다. 궤적이 중간에 잘리면 끝의 가치 추정이 남을 수 있다. 종료 처리까지 함께 봐야 한다.</p></details>
+
+<h2>7. PPO-Clip의 목적함수</h2>
+<p>수집 때의 정책을 <span class="math-inline">\(\pi_{\mathrm{old}}\)</span>로 고정하고 현재 정책과의 확률비 <span class="math-inline">\(r_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)\)</span>를 계산한다. PPO-Clip은 다음의 surrogate 목적을 최대화한다.</p>
+<div class="equation">\[L^{\mathrm{clip}}(\theta)
+=E_t\!\left[
+\min\!\left(
+r_t(\theta)\widehat A_t,\,
+\operatorname{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t
+\right)\right].\]</div>
+<p><span class="math-inline">\(\widehat A_t&gt;0\)</span>이면 그 행동의 확률을 과도하게 높이는 이득을 제한하고, <span class="math-inline">\(\widehat A_t&lt;0\)</span>이면 확률을 과도하게 낮추는 이득을 제한한다. 구현에서는 rollout 때의 이전 로그확률을 보존하고 현재 로그확률과의 차이를 지수화해 비를 계산하는 편이 안정적이다. clip은 엄격한 KL 신뢰 영역 보장이 아니므로 실제 정책 변화도 진단해야 한다.</p>
+<h2>8. Reacher에서 여러 번의 갱신</h2>
+<p>Reacher 과제는 GAE와 baseline을 공통으로 쓰는 정책경사 버전과 PPO 버전을 비교한다. PPO는 같은 on-policy batch를 여러 epoch와 minibatch에 걸쳐 사용한다. 원본 설정은 PPO 4 epoch, 4 minibatch를 사용한다. 데이터를 여러 번 보되 확률비와 clipping으로 정책 변화가 지나치게 커졌을 때의 이득을 제한하려는 것이다.</p>
+<p>clip 없이 단순 정책경사 손실을 같은 batch에서 여러 번 최적화하면 첫 갱신 뒤 데이터가 이미 이전 정책의 데이터가 된다. 이후 갱신은 현재 정책 분포를 반영하지 못하고 과도한 확률 변화로 불안정해질 수 있다. 실험 결과를 설명할 때 단지 PPO의 점수뿐 아니라 같은 환경 단계 수에서의 곡선과 변동을 함께 비교한다.</p>
+<h2>구현 점검표</h2>
+<table>
+<thead>
+<tr>
+<th>구성</th>
+<th>확인할 항목</th>
+<th>흔한 오류</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>궤적 수집</td>
+<td>상태·행동·보상·종료 길이의 정렬</td>
+<td>마지막 상태를 행동 배열과 같은 길이로 취급</td>
+</tr>
+<tr>
+<td>반환 계산</td>
+<td>전체 반환과 reward-to-go의 시간 인덱스</td>
+<td>과거 보상이나 할인 지수를 잘못 포함</td>
+</tr>
+<tr>
+<td>가치함수</td>
+<td>예측과 목표의 batch 차원</td>
+<td>정책 손실로 가치망이 우연히 역전파</td>
+</tr>
+<tr>
+<td>GAE</td>
+<td>역방향 재귀와 종료 마스크</td>
+<td>진짜 종료 후 다음 가치를 더함</td>
+</tr>
+<tr>
+<td>PPO</td>
+<td>이전 로그확률의 고정, 비와 clip</td>
+<td>업데이트 중 이전 정책 값을 새로 계산</td>
+</tr>
+<tr>
+<td>평가</td>
+<td>누적 환경 단계와 여러 episode</td>
+<td>업데이트 횟수만 가로축으로 사용</td>
+</tr>
+</tbody></table>
+<p>보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 <span class="math-inline">\(\lambda\)</span> 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 제출 묶음은 보고서 PDF와 필요한 코드로 구성하며 원본 지침은 용량 제한과 영상·TensorBoard 로그 제외를 명시한다. 최종 형식은 현재 공지를 기준으로 확인한다.</p>
+</article><nav class="assignment-related"><h2>연결되는 슬라이드</h2><div><a href="../lecture/02-2.html#s11">02-2 / 11 · Monte Carlo 정책경사 ↗</a><a href="../lecture/02-2.html#s12">02-2 / 12 · REINFORCE의 반복 ↗</a><a href="../lecture/02-2.html#s19">02-2 / 19 · 더 나은 가중치의 계보 ↗</a><a href="../lecture/03-1.html#s10">03-1 / 10 · 과거 보상은 현재 행동의 결과가 아니다 ↗</a><a href="../lecture/03-1.html#s24">03-1 / 24 · 상태 baseline을 생각하기 ↗</a><a href="../lecture/03-2.html#s09">03-2 / 09 · GAE의 가중 평균과 재귀 ↗</a><a href="../lecture/03-2.html#s16">03-2 / 16 · PPO를 구성하는 네 조각 ↗</a></div></nav><footer class="site-footer">Deep Reinforcement Learning</footer></main></div><dialog id="slide-dialog" class="slide-dialog"><button type="button" class="dialog-close" data-dialog-close aria-label="이미지 닫기">×</button><img alt="확대한 슬라이드"><p></p></dialog><dialog id="search-dialog" class="search-dialog"><div class="search-panel"><div class="search-input-row"><span>⌕</span><input type="search" id="search-input" placeholder="개념, 사례, 수식 검색" aria-label="전체 내용 검색"><button type="button" data-search-close aria-label="검색 닫기">×</button></div><div id="search-results" class="search-results"></div><p class="search-hint">슬라이드 제목과 설명을 함께 검색합니다. Esc로 닫기</p></div></dialog><script src="../assets/search-index.js"></script><script src="../assets/site.js"></script></body></html>

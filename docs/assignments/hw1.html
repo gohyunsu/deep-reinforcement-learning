@@ -1,0 +1,77 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Deep Reinforcement Learning — 슬라이드별 한국어 학습 가이드"><title>과제 1 · 모방학습 · Deep Reinforcement Learning</title><link rel="stylesheet" href="../assets/site.css"><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script></head><body data-prefix="../"><div class="reading-progress" aria-hidden="true"></div><header class="site-header"><a class="brand" href="../index.html"><span class="brand-mark">π</span><span class="brand-title">Deep Reinforcement Learning</span></a><a class="pdf-link" href="../study-guide.pdf" download>PDF 가이드 ↓</a><button type="button" class="search-trigger" data-search-trigger aria-label="전체 검색 열기"><span>⌕</span> 검색 <kbd>/</kbd></button></header><div class="layout"><aside class="sidebar"><a class="sidebar-home" href="../index.html">← 전체 목차</a><div class="sidebar-label">강의</div><nav aria-label="강의 목록" class="chapter-nav"><a class="chapter-link " href="../lecture/01-1.html"><span class="chapter-num">01-1</span><span><strong>강화학습이 필요한 이유</strong><small>순차 결정의 문제와 응용</small></span><span class="chapter-count">32</span></a><a class="chapter-link " href="../lecture/01-2.html"><span class="chapter-num">01-2</span><span><strong>모방학습과 로봇 정책</strong><small>BC, DAgger, ACT와 확산 정책</small></span><span class="chapter-count">50</span></a><a class="chapter-link " href="../lecture/02-1.html"><span class="chapter-num">02-1</span><span><strong>강화학습의 수학적 기초</strong><small>MDP, 정책, 보상과 상태</small></span><span class="chapter-count">41</span></a><a class="chapter-link " href="../lecture/02-2.html"><span class="chapter-num">02-2</span><span><strong>정책경사와 REINFORCE</strong><small>로그미분과 표본 기울기</small></span><span class="chapter-count">20</span></a><a class="chapter-link " href="../lecture/03-1.html"><span class="chapter-num">03-1</span><span><strong>가치함수와 Actor–Critic</strong><small>reward-to-go, baseline과 advantage</small></span><span class="chapter-count">35</span></a><a class="chapter-link " href="../lecture/03-2.html"><span class="chapter-num">03-2</span><span><strong>GAE와 PPO</strong><small>편향·분산 절충과 안정적 정책 갱신</small></span><span class="chapter-count">27</span></a><a class="chapter-link " href="../lecture/04-1.html"><span class="chapter-num">04-1</span><span><strong>Q-learning과 DQN</strong><small>Bellman 갱신, Double DQN과 Rainbow</small></span><span class="chapter-count">42</span></a><a class="chapter-link " href="../lecture/05-1.html"><span class="chapter-num">05-1</span><span><strong>연속 행동의 Off-policy RL</strong><small>DDPG, TD3와 SAC</small></span><span class="chapter-count">37</span></a><a class="chapter-link " href="../lecture/05-2.html"><span class="chapter-num">05-2</span><span><strong>강화학습 벤치마크</strong><small>게임, 시뮬레이션과 로봇 평가</small></span><span class="chapter-count">13</span></a><a class="chapter-link " href="../lecture/06.html"><span class="chapter-num">06</span><span><strong>Offline RL</strong><small>분포 이동, 보수적 가치와 IQL</small></span><span class="chapter-count">42</span></a></nav><div class="sidebar-label">과제</div><nav aria-label="과제 목록" class="chapter-nav"><a class="chapter-link is-current" href="../assignments/hw1.html"><span class="chapter-num">HW1</span><span><strong>과제 1 · 모방학습</strong><small>행동 복제, 실험 평가, DAgger</small></span></a><a class="chapter-link " href="../assignments/hw2.html"><span class="chapter-num">HW2</span><span><strong>과제 2 · 정책경사와 PPO</strong><small>reward-to-go, baseline, GAE, PPO-Clip</small></span></a></nav></aside><main class="lecture-main"><section class="lecture-hero assignment-hero"><div class="eyebrow">ASSIGNMENT GUIDE</div><h1>과제 1 · 모방학습</h1><div class="lecture-intro"><p>행동 복제, 실험 평가, DAgger</p></div></section><article class="assignment-content explanation"><p>이 과제는 전문가 시연에서 행동을 복제하고, 실제 rollout에서 성능을 측정하며, 정책이 방문한 상태를 전문가가 교정하는 DAgger로 확장한다. 구현의 중심은 <strong>상태–행동 데이터가 어디서 오고 어떻게 다시 모이는가</strong>다. 실험 결과에는 직접 얻은 수치와 실행 설정을 기록한다.</p>
+<h2>먼저 연결할 개념</h2>
+<ul>
+<li><a href="../lecture/01-2.html#s08">행동 복제의 목적함수</a>: 전문가 데이터에서 정책의 로그우도를 높인다.</li>
+<li><a href="../lecture/01-2.html#s13">오류 누적과 상태 분포 이동</a>: 훈련 정확도와 rollout 성공률이 다를 수 있다.</li>
+<li><a href="../lecture/01-2.html#s19">DAgger의 데이터 집계</a>: 현재 정책이 방문한 상태에도 전문가 행동을 붙인다.</li>
+</ul>
+<h2>1. 환경 인터페이스를 먼저 확인하기</h2>
+<p>환경을 초기화하면 시작 관측이 나오고, 한 단계 진행 함수에는 행동을 넣어 다음 관측·보상·종료 여부를 받는다. 과제에서 묻는 이산 행동과 연속 행동의 차이는 정책 출력이 무엇을 뜻하는지 결정한다. 이산 행동은 후보 중 하나를 고르고, 연속 행동은 구간 안의 실수 벡터를 낸다. Ant와 다른 MuJoCo 보행 환경은 연속 관절 제어다.</p>
+<p>한 rollout은 초기화 → 관측으로 행동 선택 → 환경 진행 → 전이 저장 → 종료까지 반복으로 만든다. 환경 API의 버전에 따라 종료와 시간 제한이 따로 반환될 수 있으므로, 스타터 코드가 실제로 어떤 형식을 기대하는지 먼저 확인한다. 관측·행동·보상 배열의 첫 차원은 시간이며, 하나의 궤적 안에서는 길이가 맞아야 한다.</p>
+<details><summary>한 단계 진행에서 받은 종료 신호를 왜 따로 보관할까?</summary><p>실제 실패·성공으로 끝난 episode와 시간 제한 때문에 끊긴 rollout은 가치함수 학습에서 다르게 처리될 수 있다. 이 과제는 BC 중심이어도 평가 episode 수와 길이를 정확히 세려면 종료 원인을 기록하는 편이 좋다.</p></details>
+
+<h2>2. 행동 복제의 데이터 흐름</h2>
+<p>전문가 시연에서 <span class="math-inline">\((s_i,a_i^*)\)</span>를 추출해 정책 네트워크의 입력과 목표로 삼는다. 확률 정책이라면 <span class="math-inline">\(\mathcal L_{\mathrm{BC}}=-N^{-1}\sum_i\log\pi_\theta(a_i^*\mid s_i)\)</span>를 최소화한다. 연속 행동에 고정 분산 Gaussian을 쓰면 평균 행동의 제곱오차를 줄이는 것과 연결된다. 훈련 중 policy loss가 줄었다고 실제 보행 반환이 반드시 오르는 것은 아니다. 실제 정책이 자기 행동으로 다른 상태를 만들기 때문이다.</p>
+<p>구현은 공통 MLP 생성 → 정책의 행동·학습 함수 → 궤적 수집 유틸리티 → replay buffer → BC 에이전트 → trainer 순서로 연결하면 의존성을 따라 검증하기 쉽다. 각 모듈에서 먼저 텐서의 모양을 확인한다. 관측 batch가 <span class="math-inline">\(B\times d_s\)</span>라면 정책 평균은 <span class="math-inline">\(B\times d_a\)</span>이어야 하고, 행동과 전문가 목표의 단위·범위가 같아야 한다.</p>
+<h3>점검할 연결</h3>
+<ol>
+<li>환경에서 얻은 관측이 정책 입력과 같은 차원인가?</li>
+<li>정책에서 나온 행동이 환경의 행동 범위를 만족하는가?</li>
+<li>replay buffer가 상태와 그때의 전문가 행동을 같은 인덱스로 보관하는가?</li>
+<li>평가할 때 탐색·훈련용 잡음을 실수로 더하지 않는가?</li>
+<li>훈련·평가의 반환을 같은 종료 조건으로 계산하는가?</li>
+</ol>
+<h2>3. BC 실험과 숫자의 의미</h2>
+<p>첫 실험은 Ant와 선택한 보행 환경 하나에서 BC 정책을 평가한다. 보고할 값은 각 정책 rollout 반환의 평균과 표준편차다. <span class="math-inline">\(K\)</span>번의 episode 반환을 <span class="math-inline">\(R_1,\ldots,R_K\)</span>라 하면 <span class="math-inline">\(\bar R=K^{-1}\sum_kR_k\)</span>이고 표본 표준편차는 <span class="math-inline">\(\sqrt{\sum_k(R_k-\bar R)^2/(K-1)}\)</span>다. 한 episode만 수집해 놓고 표준편차를 보고할 수는 없다.</p>
+<p>평가 표본 예산이 episode 길이보다 커야 여러 rollout을 얻는다. 예컨대 최대 길이가 1000단계이고 평가 예산이 5000단계이면 대략 다섯 episode를 얻는다. 표에는 환경, 전문가 성과, BC 평균±표준편차, 평가 episode 수, 훈련 데이터 양, 네트워크 크기와 업데이트 수를 함께 적으면 비교가 공정해진다.</p>
+<p>실행 영상을 한 장면으로 확인하는 이유는 반환 숫자가 포착하지 못하는 이상 행동을 찾기 위해서다. 로봇이 제자리에서 높은 보상을 받거나 초기 몇 단계만 걷고 넘어지는 모습을 보면 보상 함수와 종료 조건을 다시 볼 수 있다.</p>
+<h2>4. 하이퍼파라미터 실험</h2>
+<p>하나의 요인에 대해 기본 설정을 포함한 <strong>네 가지 이상의 값</strong>을 비교한다. 예를 들어 시연량을 바꾸면 다른 조건인 네트워크 크기·훈련 단계·평가 episode를 고정한다. 여러 조건을 동시에 바꾸면 어느 요인이 성능 차이를 만들었는지 알기 어렵다.</p>
+<p>가로축은 바꾼 변수, 세로축은 평가 반환의 평균으로 그리고 가능하면 표준편차나 여러 시드 결과를 표시한다. 시연량을 늘렸는데 성과가 멈춘다면 모델 용량보다 시연의 다양성이나 상태 분포 이동이 병목일 수 있다. 학습 단계를 늘렸는데 훈련 손실만 내려간다면 과적합 또는 배포 분포 차이를 의심할 수 있다.</p>
+<h2>5. DAgger의 반복</h2>
+<p>BC가 만든 초기 정책으로 환경을 실행해 현재 정책이 방문한 상태를 모은다. 그 상태를 전문가 정책에 입력해 교정 행동을 얻고, 기존 시연과 합친 데이터로 새 정책을 훈련한다.</p>
+<div class="equation">\[\mathcal D_{k+1}=\mathcal D_k\cup
+\{(s,\pi^*(s)):s\sim d_{\pi_k}\}.\]</div>
+<p>구현할 재라벨링 함수는 <strong>정책이 방문한 상태</strong>를 전문가에게 물어야 한다. 기존 전문가 데이터의 행동을 다시 읽어 붙이는 것만으로는 DAgger의 핵심인 분포 이동 교정이 생기지 않는다. 각 반복에서 추가된 시연 수와 정책 평가 반환을 함께 기록하자.</p>
+<details><summary>DAgger 곡선이 매 반복 항상 올라가야 할까?</summary><p>그렇지 않다. 유한한 시연, 정책 최적화 오차, 환경의 무작위성 때문에 평가 반환은 출렁일 수 있다. 여러 반복과 가능한 경우 여러 시드의 경향을 보며 BC와 같은 조건에서 비교한다.</p></details>
+
+<h2>6. BC와 DAgger 비교</h2>
+<p>두 환경에서 DAgger 반복 횟수에 따른 평균 반환 곡선을 그린다. 비교 기준선으로 BC와 전문가의 성과를 함께 표시하면 분포 이동 교정의 효과를 해석하기 쉽다. DAgger가 개선되어도 전문가까지 닿지 못한다면 전문가 라벨의 부족, 현재 정책이 방문한 상태의 다양성, 정책 표현력이나 최적화 설정을 살핀다.</p>
+<p>곡선의 가로축이 반복 횟수이면 각 반복에서 추가한 데이터 양도 설명해야 한다. 반복 수가 같은 두 실험이라도 한 번에 수집한 상태가 다르면 사용한 전문가 피드백 예산이 다르기 때문이다.</p>
+<h2>결과를 정리하는 형식</h2>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>기록할 내용</th>
+<th>해석할 질문</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BC 성능</td>
+<td>환경별 평균 반환과 표준편차</td>
+<td>시연 행동을 실제 실행에서 재현했나?</td>
+</tr>
+<tr>
+<td>행동 영상</td>
+<td>평가 rollout의 대표 장면</td>
+<td>어느 단계에서 정책이 이탈하나?</td>
+</tr>
+<tr>
+<td>변수 실험</td>
+<td>네 가지 이상 설정과 동일한 평가 조건</td>
+<td>데이터·모델·업데이트 중 무엇이 병목인가?</td>
+</tr>
+<tr>
+<td>DAgger 곡선</td>
+<td>두 과업의 반복별 평균 반환</td>
+<td>교정 데이터가 분포 이동을 줄였나?</td>
+</tr>
+<tr>
+<td>비교 설명</td>
+<td>전문가·BC·DAgger, 데이터 예산</td>
+<td>차이를 한 요인으로 과장하지 않았나?</td>
+</tr>
+</tbody></table>
+<p>보고서에는 실제 실행한 설정과 결과를 쓴다. 제출 파일은 보고서 PDF와 필요한 코드·노트북을 하나의 압축 파일에 넣는 형식이며, 원본 지침에서는 크기 제한과 영상·TensorBoard 로그 제외를 명시한다. 최종 제출 전에는 현재 공지의 파일명·용량 기준을 다시 확인한다.</p>
+</article><nav class="assignment-related"><h2>연결되는 슬라이드</h2><div><a href="../lecture/01-2.html#s08">01-2 / 08 · Behavioral Cloning의 목적함수 ↗</a><a href="../lecture/01-2.html#s13">01-2 / 13 · 첫째 실패: 오류의 누적 ↗</a><a href="../lecture/01-2.html#s19">01-2 / 19 · DAgger의 네 단계 ↗</a><a href="../lecture/01-2.html#s20">01-2 / 20 · 사람이 개입하는 DAgger ↗</a><a href="../lecture/02-1.html#s11">02-1 / 11 · 행동 복제의 기준선 ↗</a><a href="../lecture/02-1.html#s13">02-1 / 13 · DAgger의 상태 분포 수정 ↗</a></div></nav><footer class="site-footer">Deep Reinforcement Learning</footer></main></div><dialog id="slide-dialog" class="slide-dialog"><button type="button" class="dialog-close" data-dialog-close aria-label="이미지 닫기">×</button><img alt="확대한 슬라이드"><p></p></dialog><dialog id="search-dialog" class="search-dialog"><div class="search-panel"><div class="search-input-row"><span>⌕</span><input type="search" id="search-input" placeholder="개념, 사례, 수식 검색" aria-label="전체 내용 검색"><button type="button" data-search-close aria-label="검색 닫기">×</button></div><div id="search-results" class="search-results"></div><p class="search-hint">슬라이드 제목과 설명을 함께 검색합니다. Esc로 닫기</p></div></dialog><script src="../assets/search-index.js"></script><script src="../assets/site.js"></script></body></html>

@@ -1,0 +1,12 @@
+[
+  {"id":"01-1","file":"DRL_01-1_course_overview.pdf","title":"강화학습이 필요한 이유","short":"순차 결정의 문제와 응용","pages":32,"color":"blue"},
+  {"id":"01-2","file":"DRL_01-2_imitation.pdf","title":"모방학습과 로봇 정책","short":"BC, DAgger, ACT와 확산 정책","pages":50,"color":"teal"},
+  {"id":"02-1","file":"DRL_02-1_reinforcement_learning_basics.pdf","title":"강화학습의 수학적 기초","short":"MDP, 정책, 보상과 상태","pages":41,"color":"amber"},
+  {"id":"02-2","file":"DRL_02-2_policy_gradient_methods.pdf","title":"정책경사와 REINFORCE","short":"로그미분과 표본 기울기","pages":20,"color":"blue"},
+  {"id":"03-1","file":"DRL_03-1_actor_critic.pdf","title":"가치함수와 Actor–Critic","short":"reward-to-go, baseline과 advantage","pages":35,"color":"teal"},
+  {"id":"03-2","file":"DRL_03-2_ppo.pdf","title":"GAE와 PPO","short":"편향·분산 절충과 안정적 정책 갱신","pages":27,"color":"amber"},
+  {"id":"04-1","file":"DRL_04-1_q_learning.pdf","title":"Q-learning과 DQN","short":"Bellman 갱신, Double DQN과 Rainbow","pages":42,"color":"blue"},
+  {"id":"05-1","file":"DRL_05-1_off_policy_rl.pdf","title":"연속 행동의 Off-policy RL","short":"DDPG, TD3와 SAC","pages":37,"color":"teal"},
+  {"id":"05-2","file":"DRL_05-2_rl_benchmarks.pdf","title":"강화학습 벤치마크","short":"게임, 시뮬레이션과 로봇 평가","pages":13,"color":"amber"},
+  {"id":"06","file":"DRL_06_offline_rl.pdf","title":"Offline RL","short":"분포 이동, 보수적 가치와 IQL","pages":42,"color":"blue"}
+]

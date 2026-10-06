@@ -24,6 +24,8 @@ kbd{border:1px solid var(--line);border-radius:4px;min-width:20px;text-align:cen
 .sidebar-label-slides{margin-top:30px}
 .chapter-nav{display:grid;gap:3px}
 .chapter-link{display:grid;grid-template-columns:25px 1fr auto;align-items:start;gap:10px;padding:10px;border-radius:10px;color:var(--ink)}
+.chapter-link{grid-template-columns:40px 1fr auto}
+.chapter-num{white-space:nowrap}
 .chapter-link:hover,.chapter-link.is-current{background:#edf2f6;text-decoration:none}
 .chapter-link.is-current{box-shadow:inset 3px 0 var(--teal)}
 .chapter-num{font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--teal);padding-top:4px}
@@ -136,30 +138,18 @@ details p{padding:13px 2px 15px;font-size:14px;color:#3e5361;margin:0!important}
 @media(max-width:1100px){.layout{grid-template-columns:220px minmax(0,1fr)}.sidebar{padding-left:13px;padding-right:9px}.slide-grid{grid-template-columns:1fr}.slide-figure{position:static;max-width:720px}.lecture-main{padding:0 36px}.explanation{max-width:850px}}
 @media(max-width:760px){.site-header{padding:0 17px;gap:10px}.header-divider,.header-subtitle,.search-trigger kbd{display:none}.brand{font-size:14px}.search-trigger{font-size:0;min-width:37px;height:37px;justify-content:center}.search-trigger>span{font-size:22px}.layout{display:block}.sidebar{position:static;height:auto;overflow:visible;border-right:0;border-bottom:1px solid var(--line);padding:10px 18px;background:#fff}.sidebar-home,.sidebar-label,.chapter-nav{display:none}.sidebar-label-slides{display:block;margin:4px 0 7px}.slide-nav{display:flex;gap:4px;overflow-x:auto;white-space:nowrap;scrollbar-width:thin}.slide-nav a{flex:none;max-width:180px;overflow:hidden;text-overflow:ellipsis;border:1px solid var(--line)}.lecture-main{padding:0 21px}.lecture-hero{padding:45px 0 38px}.lecture-intro{font-size:16px}.slide{padding:38px 0 48px}.slide-grid{gap:20px}.slide-heading{margin-bottom:19px}.explanation{font-size:15px}.overview-grid{grid-template-columns:repeat(2,1fr)}.home-hero{min-height:0;padding:68px 0 80px}.home-hero:after{opacity:.3}.hero-formula{margin-top:36px}.chapter-pager{grid-template-columns:1fr}.chapter-pager a:last-child{text-align:left}}
 @media(max-width:540px){.overview-grid{grid-template-columns:1fr}.overview-card{min-height:190px}.home-hero h1{font-size:43px}.hero-actions{align-items:flex-start;flex-direction:column;gap:12px}.path-line{gap:7px}.path-line span{font-size:11px;padding:4px 8px}}
+@media(max-width:760px){html{scroll-padding-top:94px}.site-header{height:auto;min-height:72px;padding-top:8px;padding-bottom:8px}.site-header>.pdf-link{display:none}.brand{min-width:0;flex:1;white-space:normal;line-height:1.25}.brand-mark,.search-trigger{flex:none}.brand-title{white-space:normal}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
-.range-context{margin:18px 0 20px;padding:16px 18px;background:#f5f8fa;border-left:3px solid var(--teal);border-radius:0 8px 8px 0}
-.range-context>span{display:block;margin-bottom:8px;color:var(--teal);font-size:11px;font-weight:750;letter-spacing:.04em}
-.range-context p{margin:7px 0;color:#43556a;font-size:14px;line-height:1.75}
-.chapter-sources{margin:54px 0 18px;padding:24px 27px;background:#edf2f6;border-radius:10px}
-.chapter-sources h2{font-size:22px;letter-spacing:-.03em;margin:0 0 16px}
-.chapter-sources ul{margin:0;padding-left:21px;columns:2;column-gap:36px}
-.chapter-sources li{break-inside:avoid;font-size:13px;margin:5px 0}
-.chapter-sources{padding:22px 24px;background:#edf2f6;border-radius:10px}
-.chapter-sources ul{margin:0;padding-left:21px;columns:2;column-gap:36px}
-.chapter-sources li{break-inside:avoid;font-size:13px;margin:5px 0}
-.lecture-intro p{margin:0 0 15px!important}
-@media(max-width:800px){.chapter-sources ul{columns:1}}
-.derivation-promo{margin:36px auto;max-width:1240px;padding:34px 38px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(110deg,#edf3f7,#f6f8f7);display:flex;justify-content:space-between;align-items:center;gap:28px}
-.derivation-promo h2{margin:8px 0;font-size:25px;letter-spacing:-.035em}
-.derivation-promo p{max-width:720px;margin:0;color:var(--muted);font-size:14px}
-.derivation-main{max-width:1000px;margin:0 auto;padding:46px clamp(22px,5vw,64px) 80px;background:#fff;min-height:calc(100vh - var(--header-h))}
-.derivation-main>.eyebrow{margin:30px 0 12px}
-.derivation-main h1{font-size:clamp(34px,4vw,52px);line-height:1.2;letter-spacing:-.05em;margin:0 0 30px}
-.derivation-main h2{font-size:25px;line-height:1.4;margin:42px 0 15px;padding-bottom:9px;border-bottom:1px solid var(--line)}
-.derivation-main p{color:#35485d}
-.derivation-main .equation{overflow-x:auto;padding:13px 8px;text-align:center}
-.derivation-main .site-footer{margin-top:60px}
-.slide-reading>p:not(.reading-kicker){margin:12px 0 18px;font-size:15px;color:#405368;line-height:1.8}
-.slide-reading details.follow-up{margin:20px 0 0;border-color:#dce6e7;background:#f1f7f6}
-.slide-reading details.follow-up p{padding:13px 2px 15px;font-size:14px;line-height:1.75;color:#3e5361}
-@media(max-width:800px){.derivation-promo{margin:25px 18px;padding:24px;align-items:flex-start;flex-direction:column}}
+.slide-assignment{margin:26px 0 0;padding:17px 20px;border:1px solid #cbdedb;border-left:3px solid var(--teal);border-radius:0 8px 8px 0;background:#edf6f4;display:flex;align-items:center;gap:15px;flex-wrap:wrap;font-size:13px}
+.slide-assignment span{color:#637b7b;font-weight:700}
+.slide-assignment a{font-weight:750}
+.assignment-content{padding:46px 0 55px;max-width:900px}
+.assignment-content h2{font-size:24px;line-height:1.4;letter-spacing:-.035em;margin:2em 0 .75em;padding-top:.7em;border-top:1px solid var(--line)}
+.assignment-content h2:first-child{border:0;padding-top:0;margin-top:0}
+.assignment-content h3{font-size:18px;margin:1.6em 0 .65em}
+.assignment-content ul,.assignment-content ol{padding-left:1.5em}
+.assignment-related{padding:24px 0 50px;border-top:1px solid var(--line)}
+.assignment-related h2{font-size:20px;letter-spacing:-.03em}
+.assignment-related>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.assignment-related a{display:block;padding:10px 13px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:13px}
+@media(max-width:760px){.assignment-related>div{grid-template-columns:1fr}.assignment-content{padding-top:28px}.slide-assignment{align-items:flex-start;flex-direction:column;gap:5px}.home-hero h1{font-size:clamp(39px,8vw,55px)}}
