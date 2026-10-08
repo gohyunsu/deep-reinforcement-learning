@@ -4,6 +4,12 @@
 <p>평가 return이 단일 seed 최고값인지 여러 seed 평균인지, 평가 때 탐색 잡음을 끄는지, 환경 step과 frame을 어떻게 세는지까지 통일해야 한다. 벽시계 시간은 병렬화와 하드웨어에 영향을 받으므로 별도 축이다.</p>
 <p>방법 A가 10만 환경 단계에서 반환 100, 방법 B가 30만 단계에서 120이라면 제한 예산이 10만인 실험에서는 A가 유용할 수 있다. 반대로 충분한 예산과 최종 점수가 목표라면 B가 나을 수 있다. 곡선 한 점만 고르지 말고 <strong>예산별 성능</strong>, 여러 seed의 변동, 실제 실행 시간을 따로 보자.</p>
 <p>성공률도 표본 수 없이 숫자만 비교하면 위험하다. 20번 중 18번 성공한 정책은 90%, 17번 성공한 정책은 85%지만 차이는 단 한 번의 시도다. 초기 물체 배치를 바꾸거나 seed를 달리하면 순위가 뒤집힐 수 있다. 성공 횟수와 전체 시도 수, 초기 조건별 결과를 함께 제시하고 충분한 반복에서 불확실성 구간을 계산해야 “5%p 우수하다”는 주장에 근거가 생긴다.</p>
+<p>독립이고 같은 성공확률 <span class="math-inline">\(p\)</span>를 갖는 <span class="math-inline">\(n\)</span>번의 평가라는 단순한 가정 아래 성공 횟수 <span class="math-inline">\(K\)</span>는 이항분포이고 <span class="math-inline">\(\widehat p=K/n\)</span>이다. 분산은 <span class="math-inline">\(\operatorname{Var}(K)=np(1-p)\)</span>에서 바로</p>
+<div class="equation">\[\operatorname{Var}(\widehat p)=\frac{p(1-p)}{n},
+\qquad
+\widehat{\operatorname{SE}}(\widehat p)
+=\sqrt{\frac{\widehat p(1-\widehat p)}{n}}.\]</div>
+<p><span class="math-inline">\(18/20=0.9\)</span>라면 추정 표준오차는 <span class="math-inline">\(\sqrt{0.9\cdot0.1/20}\approx0.067\)</span>로, 90%와 85%의 차이인 0.05보다도 크다. 따라서 이 결과만으로 우열을 확신하기 어렵다. 이 근사식은 시행들이 독립이라는 전제가 있고 작은 표본이나 극단적인 성공률에서 신뢰구간으로 그대로 쓰기 부정확하다. 같은 초기 조건을 공유한 두 정책의 대응 평가라면 성공·실패가 어떻게 짝지어졌는지도 기록해야 한다.</p>
 </div></div></section><section class="slide" id="s03" data-slide="03"><div class="slide-heading"><span class="slide-index">05-2 / 03</span><h2>벤치마크의 지도</h2></div><div class="slide-grid"><figure class="slide-figure"><button type="button" class="slide-image-button" data-zoom-src="../assets/slides/05-2/03.webp" data-zoom-label="05-2장 슬라이드 03: 벤치마크의 지도" aria-label="슬라이드 03 이미지 확대"><img src="../assets/slides/05-2/03.webp" alt="05-2장 슬라이드 03: 벤치마크의 지도" loading="lazy" decoding="async"><span class="zoom-hint">확대해서 보기 ↗</span></button><figcaption>슬라이드 03</figcaption></figure><div class="explanation"><p>연속 제어의 DMC·MuJoCo, 이산 제어의 Atari·MiniGrid, 일반화의 Procgen, 장기 로봇 조작의 RLBench·Meta-World·LIBERO, 실제 로봇 조립의 FurnitureBench는 서로 다른 병목을 드러낸다. “많은 과제”라는 표현만으로 난도를 비교할 수 없다. 보상이 촘촘한지, 관측이 픽셀인지 상태 벡터인지, 성공 판정이 자동인지 사람이 확인하는지를 구분한다.</p>
 <details><summary>왜 하나의 벤치마크에서 이긴 알고리즘이 보편적으로 우수하지 않은가?</summary><p>벤치마크마다 행동 차원, 보상 지연, 관측 잡음, 시뮬레이터 속도, 데이터 예산이 다르다. 한 방법의 탐색과 함수근사 편향이 특정 환경에 잘 맞았을 수 있으므로 다른 축의 과제와 독립 seed에서 다시 평가해야 한다.</p></details>
 
