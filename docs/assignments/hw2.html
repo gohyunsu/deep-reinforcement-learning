@@ -7,13 +7,14 @@
 <li><a href="../lecture/03-2.html#s16">PPO의 정책비</a>: 이전 정책에서 모은 데이터를 여러 번 사용할 때 갱신을 제한한다.</li>
 </ul>
 <h2>1. 전체 반환과 reward-to-go</h2>
-<p>정책 파라미터를 <span class="math-inline">\(\theta\)</span>, 정책이 만든 궤적을 <span class="math-inline">\(\tau=(s_0,a_0,\ldots,s_T)\)</span>라 하자. <span class="math-inline">\(T\)</span>는 행동 횟수, <span class="math-inline">\(r_k\)</span>는 시점 <span class="math-inline">\(k\)</span>의 보상, <span class="math-inline">\(\gamma\in[0,1]\)</span>는 할인율이다. 궤적 전체의 반환을 <span class="math-inline">\(R(\tau)\)</span>라 쓰고, 시점 <span class="math-inline">\(t\)</span>부터의 reward-to-go는 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>다. <span class="math-inline">\(N\)</span>개의 현재 정책 궤적에서 <span class="math-inline">\(i\)</span>번째 궤적의 반환을 <span class="math-inline">\(R_i\)</span>라 할 때, 각 행동의 로그확률 기울기 <span class="math-inline">\(\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)\)</span>를 어느 성과로 가중하느냐에 따라 두 추정량이 갈린다. <span class="math-inline">\(\widehat g\)</span>는 표본 정책경사 추정치다.</p>
+<p>정책 파라미터를 <span class="math-inline">\(\theta\)</span>, 정책이 만든 궤적을 <span class="math-inline">\(\tau=(s_0,a_0,r_0,s_1,\ldots,a_{T-1},r_{T-1},s_T)\)</span>라 하자. <span class="math-inline">\(T\)</span>는 행동 횟수, <span class="math-inline">\(r_k\)</span>는 시점 <span class="math-inline">\(k\)</span>의 보상, <span class="math-inline">\(\gamma\in[0,1]\)</span>는 할인율이다. 전체 할인 반환은 <span class="math-inline">\(R(\tau)=\sum_{k=0}^{T-1}\gamma^k r_k\)</span>, 시점 <span class="math-inline">\(t\)</span>부터의 reward-to-go는 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>다. <span class="math-inline">\(N\)</span>개의 현재 정책 궤적에서 <span class="math-inline">\(R_i=R(\tau_i)\)</span>라 할 때, 각 행동의 로그확률 기울기 <span class="math-inline">\(\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)\)</span>를 어느 성과로 가중하느냐에 따라 두 추정량이 갈린다. <span class="math-inline">\(\widehat g\)</span>는 표본 정책경사 추정치다.</p>
 <div class="equation">\[\widehat g_{\mathrm{full}}
 =\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)R_i,
 \qquad
 \widehat g_{\mathrm{rtg}}
-=\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.\]</div>
-<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위 표본식은 시점별 가중치를 <span class="math-inline">\(G_t\)</span>로 쓰는 구현 관례를 나타낸다. 초기 상태 기준 목적을 정확히 <span class="math-inline">\(J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]\)</span>로 두고 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>를 쓴다면, 그 목적의 정책경사에는 각 <span class="math-inline">\(t\)</span> 항 바깥에 <span class="math-inline">\(\gamma^t\)</span>가 한 번 더 붙는다. <span class="math-inline">\(\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k\)</span>이기 때문이다. 스타터 코드의 목적과 할인 관례를 먼저 확인하고 시간 인덱스를 일치시켜야 한다.</p>
+=\frac1N\sum_i\sum_t\gamma^t
+\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.\]</div>
+<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 <strong>같은 초기 상태 기준 목적</strong> <span class="math-inline">\(J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]\)</span>에 대한 추정량이다. 두 번째 식에 <span class="math-inline">\(\gamma^t\)</span>가 있는 이유는 <span class="math-inline">\(\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k\)</span>이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 <span class="math-inline">\(G_t\)</span>만 쓴다. <span class="math-inline">\(\gamma=1\)</span>이면 동일하지만, <span class="math-inline">\(\gamma&lt;1\)</span>이면 원래 <span class="math-inline">\(J\)</span>의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.</p>
 <p>세 단계의 보상이 <span class="math-inline">\([2,-1,4]\)</span>이고 <span class="math-inline">\(\gamma=1\)</span>이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 <span class="math-inline">\([5,3,4]\)</span>다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.</p>
 <h2>2. CartPole 비교 실험</h2>
 <p>이산 행동 CartPole에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 <strong>각각</strong> 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계다.</p>
@@ -28,7 +29,7 @@
 <div class="equation">\[E_{a\sim\pi_\theta(\cdot\mid s)}
 [\nabla_\theta\log\pi_\theta(a\mid s)V_\phi(s)]
 =V_\phi(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0\]</div>
-<p>이므로 정확한 기대 정책경사는 바뀌지 않는다. 다만 학습한 가치함수는 근사이고, 실제 구현에서 데이터 재사용·정규화·학습률이 분산과 편향에 영향을 줄 수 있다. 가치함수 손실의 하락과 정책 반환의 상승을 함께 봐야 한다.</p>
+<p>이므로 정확한 기대 정책경사는 바뀌지 않는다. 식의 <span class="math-inline">\(\sum_a\)</span>는 이산 행동을 가정했으며 연속 행동에서는 행동공간에 대한 적분으로 바꾼다. 두 경우 모두 정책 확률 또는 밀도의 전체 합이 1이라는 정규화 성질을 쓴다. 다만 학습한 가치함수는 근사이고, 실제 구현에서 데이터 재사용·정규화·학습률이 분산과 편향에 영향을 줄 수 있다. 가치함수 손실의 하락과 정책 반환의 상승을 함께 봐야 한다.</p>
 <p>상태 <span class="math-inline">\(s\)</span>의 보통 미래 반환이 12인데 한 행동 뒤 실제 반환이 10이면 advantage는 -2다. 보상이 양수여도 그 상태에서는 평균보다 나빴다는 뜻이다. 가치망이 <span class="math-inline">\(V_\phi(s)=20\)</span>으로 크게 잘못 예측했다면 advantage는 -10이 되어 actor 갱신도 과장된다. 정책 손실과 가치 손실을 따로 관찰해야 하는 이유다.</p>
 <h2>4. HalfCheetah에서 baseline 평가</h2>
 <p>연속 제어 HalfCheetah에서는 reward-to-go 정책경사와 가치 baseline을 붙인 버전을 비교한다. 원본 실험 설정은 할인율 <span class="math-inline">\(0.95\)</span>, batch 5000, baseline 학습 단계 수와 학습률을 명시한다. baseline이 더 정확하면 advantage의 잡음이 줄 수 있지만, baseline을 지나치게 적게 또는 과하게 학습하면 정책 갱신이 흔들릴 수 있다.</p>

@@ -11,17 +11,18 @@
 
 ## 1. 전체 반환과 reward-to-go
 
-정책 파라미터를 $\theta$, 정책이 만든 궤적을 $\tau=(s_0,a_0,\ldots,s_T)$라 하자. $T$는 행동 횟수, $r_k$는 시점 $k$의 보상, $\gamma\in[0,1]$는 할인율이다. 궤적 전체의 반환을 $R(\tau)$라 쓰고, 시점 $t$부터의 reward-to-go는 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$다. $N$개의 현재 정책 궤적에서 $i$번째 궤적의 반환을 $R_i$라 할 때, 각 행동의 로그확률 기울기 $\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)$를 어느 성과로 가중하느냐에 따라 두 추정량이 갈린다. $\widehat g$는 표본 정책경사 추정치다.
+정책 파라미터를 $\theta$, 정책이 만든 궤적을 $\tau=(s_0,a_0,r_0,s_1,\ldots,a_{T-1},r_{T-1},s_T)$라 하자. $T$는 행동 횟수, $r_k$는 시점 $k$의 보상, $\gamma\in[0,1]$는 할인율이다. 전체 할인 반환은 $R(\tau)=\sum_{k=0}^{T-1}\gamma^k r_k$, 시점 $t$부터의 reward-to-go는 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$다. $N$개의 현재 정책 궤적에서 $R_i=R(\tau_i)$라 할 때, 각 행동의 로그확률 기울기 $\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)$를 어느 성과로 가중하느냐에 따라 두 추정량이 갈린다. $\widehat g$는 표본 정책경사 추정치다.
 
 $$
 \widehat g_{\mathrm{full}}
 =\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)R_i,
 \qquad
 \widehat g_{\mathrm{rtg}}
-=\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.
+=\frac1N\sum_i\sum_t\gamma^t
+\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.
 $$
 
-현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위 표본식은 시점별 가중치를 $G_t$로 쓰는 구현 관례를 나타낸다. 초기 상태 기준 목적을 정확히 $J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]$로 두고 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$를 쓴다면, 그 목적의 정책경사에는 각 $t$ 항 바깥에 $\gamma^t$가 한 번 더 붙는다. $\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k$이기 때문이다. 스타터 코드의 목적과 할인 관례를 먼저 확인하고 시간 인덱스를 일치시켜야 한다.
+현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 **같은 초기 상태 기준 목적** $J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]$에 대한 추정량이다. 두 번째 식에 $\gamma^t$가 있는 이유는 $\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k$이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 $G_t$만 쓴다. $\gamma=1$이면 동일하지만, $\gamma<1$이면 원래 $J$의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.
 
 세 단계의 보상이 $[2,-1,4]$이고 $\gamma=1$이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 $[5,3,4]$다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.
 
@@ -49,7 +50,7 @@ E_{a\sim\pi_\theta(\cdot\mid s)}
 =V_\phi(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0
 $$
 
-이므로 정확한 기대 정책경사는 바뀌지 않는다. 다만 학습한 가치함수는 근사이고, 실제 구현에서 데이터 재사용·정규화·학습률이 분산과 편향에 영향을 줄 수 있다. 가치함수 손실의 하락과 정책 반환의 상승을 함께 봐야 한다.
+이므로 정확한 기대 정책경사는 바뀌지 않는다. 식의 $\sum_a$는 이산 행동을 가정했으며 연속 행동에서는 행동공간에 대한 적분으로 바꾼다. 두 경우 모두 정책 확률 또는 밀도의 전체 합이 1이라는 정규화 성질을 쓴다. 다만 학습한 가치함수는 근사이고, 실제 구현에서 데이터 재사용·정규화·학습률이 분산과 편향에 영향을 줄 수 있다. 가치함수 손실의 하락과 정책 반환의 상승을 함께 봐야 한다.
 
 상태 $s$의 보통 미래 반환이 12인데 한 행동 뒤 실제 반환이 10이면 advantage는 -2다. 보상이 양수여도 그 상태에서는 평균보다 나빴다는 뜻이다. 가치망이 $V_\phi(s)=20$으로 크게 잘못 예측했다면 advantage는 -10이 되어 actor 갱신도 과장된다. 정책 손실과 가치 손실을 따로 관찰해야 하는 이유다.
 
