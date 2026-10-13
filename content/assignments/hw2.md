@@ -11,7 +11,7 @@
 
 ## 1. 전체 반환과 reward-to-go
 
-현재 정책으로 궤적을 수집한 뒤 각 행동의 로그확률 기울기를 성과로 가중한다. 전체 반환 버전은 그 궤적의 총보상 $R(\tau)$를 모든 시점에 붙인다. reward-to-go는 시점 $t$ 뒤의 보상만 더한 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$를 붙인다.
+정책 파라미터를 $\theta$, 정책이 만든 궤적을 $\tau=(s_0,a_0,\ldots,s_T)$라 하자. $T$는 행동 횟수, $r_k$는 시점 $k$의 보상, $\gamma\in[0,1]$는 할인율이다. 궤적 전체의 반환을 $R(\tau)$라 쓰고, 시점 $t$부터의 reward-to-go는 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$다. $N$개의 현재 정책 궤적에서 $i$번째 궤적의 반환을 $R_i$라 할 때, 각 행동의 로그확률 기울기 $\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)$를 어느 성과로 가중하느냐에 따라 두 추정량이 갈린다. $\widehat g$는 표본 정책경사 추정치다.
 
 $$
 \widehat g_{\mathrm{full}}
@@ -21,7 +21,7 @@ $$
 =\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.
 $$
 
-현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 다만 할인율을 어디에 곱하는지는 목적함수와 스타터 코드의 시간 인덱스 관례에 맞춰야 한다. 수식을 코드로 옮길 때 $t=0$에서 시작하는지와 마지막 보상이 어느 배열 위치에 있는지 먼저 확인한다.
+현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위 표본식은 시점별 가중치를 $G_t$로 쓰는 구현 관례를 나타낸다. 초기 상태 기준 목적을 정확히 $J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]$로 두고 $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k$를 쓴다면, 그 목적의 정책경사에는 각 $t$ 항 바깥에 $\gamma^t$가 한 번 더 붙는다. $\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k$이기 때문이다. 스타터 코드의 목적과 할인 관례를 먼저 확인하고 시간 인덱스를 일치시켜야 한다.
 
 세 단계의 보상이 $[2,-1,4]$이고 $\gamma=1$이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 $[5,3,4]$다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.
 
@@ -39,7 +39,7 @@ $$
 
 ## 3. 상태 가치 baseline
 
-상태 가치 $V_\phi(s_t)$는 그 상태에서 현재 정책을 계속 따를 때의 기대 미래 보상이다. 정책 업데이트에는 $A_t=G_t-V_\phi(s_t)$를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.
+파라미터 $\phi$인 가치망 $V_\phi(s_t)$는 상태 $s_t$에서 현재 정책을 계속 따를 때의 기대 미래 반환을 추정한다. 정책 업데이트에는 추정 advantage $A_t=G_t-V_\phi(s_t)$를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.
 
 행동에 의존하지 않는 baseline의 기대 기여는
 
@@ -61,7 +61,7 @@ $$
 
 ## 5. GAE의 계산
 
-한 단계 TD 잔차를 $\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)$라고 두면 GAE는 다음과 같다.
+한 단계 TD 잔차를 $\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)$라고 두자. $\lambda\in[0,1]$는 긴 반환의 반영 정도, $T$는 이번 rollout이 끝나는 시점이다. $\widehat A_t$는 시점 $t$의 GAE 추정치이고 경계에서는 $\widehat A_T=0$으로 둔다. 여러 길이의 TD 잔차를 합치면
 
 $$
 \widehat A_t^{\mathrm{GAE}(\gamma,\lambda)}
@@ -83,20 +83,20 @@ HumanoidStandup에서는 $\lambda=0$, $0.95$, $1$을 같은 환경·네트워크
 
 ## 7. PPO-Clip의 목적함수
 
-수집 때의 정책을 $\pi_{\mathrm{old}}$로 고정하고 현재 정책과의 확률비 $r_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$를 계산한다. PPO-Clip은 다음의 surrogate 목적을 최대화한다.
+수집 때의 정책을 $\pi_{\mathrm{old}}$로 고정하고 현재 정책 $\pi_\theta$와의 행동 확률비를 $\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$라 하자. 이는 보상 $r_t$와 다른 양이다. $\widehat A_t$는 수집한 rollout에서 계산해 고정한 advantage 추정치, $E_t$는 그 rollout의 시점 표본 평균이다. $\epsilon>0$은 허용할 확률비 범위의 반폭이고 $\operatorname{clip}(x,l,u)$는 $x$를 $[l,u]$ 안으로 자른다. PPO-Clip은 다음 surrogate 목적을 최대화한다.
 
 $$
 L^{\mathrm{clip}}(\theta)
 =E_t\!\left[
 \min\!\left(
-r_t(\theta)\widehat A_t,\,
-\operatorname{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t
+\rho_t(\theta)\widehat A_t,\,
+\operatorname{clip}(\rho_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t
 \right)\right].
 $$
 
 $\widehat A_t>0$이면 그 행동의 확률을 과도하게 높이는 이득을 제한하고, $\widehat A_t<0$이면 확률을 과도하게 낮추는 이득을 제한한다. 구현에서는 rollout 때의 이전 로그확률을 보존하고 현재 로그확률과의 차이를 지수화해 비를 계산하는 편이 안정적이다. clip은 엄격한 KL 신뢰 영역 보장이 아니므로 실제 정책 변화도 진단해야 한다.
 
-수치로 clipping을 확인하자. $\widehat A=2$, $r=1.3$, $\epsilon=0.2$라면 원래 항은 2.6, clipped 항은 2.4이므로 목적은 2.4를 쓴다. $\widehat A=-2$, $r=0.5$라면 두 항은 -1과 -1.6이므로 -1.6을 쓴다. 두 부호에서 모두 `min`을 적용해야 한다. 구현 결과를 이 작은 예와 비교하면 부호 실수를 빨리 찾을 수 있다.
+수치로 clipping을 확인하자. $\widehat A=2$, $\rho=1.3$, $\epsilon=0.2$라면 원래 항은 2.6, clipped 항은 2.4이므로 목적은 2.4를 쓴다. $\widehat A=-2$, $\rho=0.5$라면 두 항은 -1과 -1.6이므로 -1.6을 쓴다. 두 부호에서 모두 `min`을 적용해야 한다. 구현 결과를 이 작은 예와 비교하면 부호 실수를 빨리 찾을 수 있다.
 
 <details><summary>clipping을 적용했는데도 KL이 커질 수 있나?</summary><p>그렇다. 목적함수는 관측된 표본의 유리한 추가 이득을 제한할 뿐 모든 상태의 정책 거리를 강제로 묶지 않는다. 학습 로그에 평균 KL과 clip fraction을 함께 기록하고, 너무 큰 이동이 반복되면 epoch 수나 학습률을 조정해야 한다.</p></details>
 

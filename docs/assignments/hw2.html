@@ -7,13 +7,13 @@
 <li><a href="../lecture/03-2.html#s16">PPO의 정책비</a>: 이전 정책에서 모은 데이터를 여러 번 사용할 때 갱신을 제한한다.</li>
 </ul>
 <h2>1. 전체 반환과 reward-to-go</h2>
-<p>현재 정책으로 궤적을 수집한 뒤 각 행동의 로그확률 기울기를 성과로 가중한다. 전체 반환 버전은 그 궤적의 총보상 <span class="math-inline">\(R(\tau)\)</span>를 모든 시점에 붙인다. reward-to-go는 시점 <span class="math-inline">\(t\)</span> 뒤의 보상만 더한 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>를 붙인다.</p>
+<p>정책 파라미터를 <span class="math-inline">\(\theta\)</span>, 정책이 만든 궤적을 <span class="math-inline">\(\tau=(s_0,a_0,\ldots,s_T)\)</span>라 하자. <span class="math-inline">\(T\)</span>는 행동 횟수, <span class="math-inline">\(r_k\)</span>는 시점 <span class="math-inline">\(k\)</span>의 보상, <span class="math-inline">\(\gamma\in[0,1]\)</span>는 할인율이다. 궤적 전체의 반환을 <span class="math-inline">\(R(\tau)\)</span>라 쓰고, 시점 <span class="math-inline">\(t\)</span>부터의 reward-to-go는 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>다. <span class="math-inline">\(N\)</span>개의 현재 정책 궤적에서 <span class="math-inline">\(i\)</span>번째 궤적의 반환을 <span class="math-inline">\(R_i\)</span>라 할 때, 각 행동의 로그확률 기울기 <span class="math-inline">\(\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)\)</span>를 어느 성과로 가중하느냐에 따라 두 추정량이 갈린다. <span class="math-inline">\(\widehat g\)</span>는 표본 정책경사 추정치다.</p>
 <div class="equation">\[\widehat g_{\mathrm{full}}
 =\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)R_i,
 \qquad
 \widehat g_{\mathrm{rtg}}
 =\frac1N\sum_i\sum_t\nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.\]</div>
-<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 다만 할인율을 어디에 곱하는지는 목적함수와 스타터 코드의 시간 인덱스 관례에 맞춰야 한다. 수식을 코드로 옮길 때 <span class="math-inline">\(t=0\)</span>에서 시작하는지와 마지막 보상이 어느 배열 위치에 있는지 먼저 확인한다.</p>
+<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위 표본식은 시점별 가중치를 <span class="math-inline">\(G_t\)</span>로 쓰는 구현 관례를 나타낸다. 초기 상태 기준 목적을 정확히 <span class="math-inline">\(J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]\)</span>로 두고 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k\)</span>를 쓴다면, 그 목적의 정책경사에는 각 <span class="math-inline">\(t\)</span> 항 바깥에 <span class="math-inline">\(\gamma^t\)</span>가 한 번 더 붙는다. <span class="math-inline">\(\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k\)</span>이기 때문이다. 스타터 코드의 목적과 할인 관례를 먼저 확인하고 시간 인덱스를 일치시켜야 한다.</p>
 <p>세 단계의 보상이 <span class="math-inline">\([2,-1,4]\)</span>이고 <span class="math-inline">\(\gamma=1\)</span>이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 <span class="math-inline">\([5,3,4]\)</span>다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.</p>
 <h2>2. CartPole 비교 실험</h2>
 <p>이산 행동 CartPole에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 <strong>각각</strong> 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계다.</p>
@@ -23,7 +23,7 @@
 
 <p>예를 들어 1000단계 batch로 20번 업데이트한 방법은 2만 환경 단계를 썼고, 4000단계 batch로 20번 업데이트한 방법은 8만 단계를 썼다. 같은 “20번 업데이트”가 같은 데이터 예산이 아닌 셈이다. 반환 그래프의 가로축을 환경 단계로 맞춘 뒤, 곡선의 흔들림과 목표 점수 도달 시간을 함께 해석해야 한다.</p>
 <h2>3. 상태 가치 baseline</h2>
-<p>상태 가치 <span class="math-inline">\(V_\phi(s_t)\)</span>는 그 상태에서 현재 정책을 계속 따를 때의 기대 미래 보상이다. 정책 업데이트에는 <span class="math-inline">\(A_t=G_t-V_\phi(s_t)\)</span>를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.</p>
+<p>파라미터 <span class="math-inline">\(\phi\)</span>인 가치망 <span class="math-inline">\(V_\phi(s_t)\)</span>는 상태 <span class="math-inline">\(s_t\)</span>에서 현재 정책을 계속 따를 때의 기대 미래 반환을 추정한다. 정책 업데이트에는 추정 advantage <span class="math-inline">\(A_t=G_t-V_\phi(s_t)\)</span>를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.</p>
 <p>행동에 의존하지 않는 baseline의 기대 기여는</p>
 <div class="equation">\[E_{a\sim\pi_\theta(\cdot\mid s)}
 [\nabla_\theta\log\pi_\theta(a\mid s)V_\phi(s)]
@@ -34,7 +34,7 @@
 <p>연속 제어 HalfCheetah에서는 reward-to-go 정책경사와 가치 baseline을 붙인 버전을 비교한다. 원본 실험 설정은 할인율 <span class="math-inline">\(0.95\)</span>, batch 5000, baseline 학습 단계 수와 학습률을 명시한다. baseline이 더 정확하면 advantage의 잡음이 줄 수 있지만, baseline을 지나치게 적게 또는 과하게 학습하면 정책 갱신이 흔들릴 수 있다.</p>
 <p>보고서에는 baseline 손실 곡선과 평가 반환 곡선을 함께 그린다. baseline gradient step 수나 학습률을 줄인 추가 실험에서는 다른 설정을 고정해야 원인을 비교할 수 있다. 손실이 내려갔다고 성과가 반드시 오르지는 않으므로 두 그래프를 나란히 해석한다.</p>
 <h2>5. GAE의 계산</h2>
-<p>한 단계 TD 잔차를 <span class="math-inline">\(\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)\)</span>라고 두면 GAE는 다음과 같다.</p>
+<p>한 단계 TD 잔차를 <span class="math-inline">\(\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)\)</span>라고 두자. <span class="math-inline">\(\lambda\in[0,1]\)</span>는 긴 반환의 반영 정도, <span class="math-inline">\(T\)</span>는 이번 rollout이 끝나는 시점이다. <span class="math-inline">\(\widehat A_t\)</span>는 시점 <span class="math-inline">\(t\)</span>의 GAE 추정치이고 경계에서는 <span class="math-inline">\(\widehat A_T=0\)</span>으로 둔다. 여러 길이의 TD 잔차를 합치면</p>
 <div class="equation">\[\widehat A_t^{\mathrm{GAE}(\gamma,\lambda)}
 =\sum_{l=0}^{T-t-1}(\gamma\lambda)^l\delta_{t+l}
 =\delta_t+\gamma\lambda\widehat A_{t+1}.\]</div>
@@ -46,15 +46,15 @@
 <details><summary><span class="math-inline">\(\lambda=1\)</span>이면 가치함수를 전혀 쓰지 않나?</summary><p>완전한 episode의 끝까지 모두 관측하고 끝에서 부트스트랩하지 않으면 GAE의 망원합이 Monte Carlo 반환에서 현재 가치 추정치를 뺀 형태가 된다. 궤적이 중간에 잘리면 끝의 가치 추정이 남을 수 있다. 종료 처리까지 함께 봐야 한다.</p></details>
 
 <h2>7. PPO-Clip의 목적함수</h2>
-<p>수집 때의 정책을 <span class="math-inline">\(\pi_{\mathrm{old}}\)</span>로 고정하고 현재 정책과의 확률비 <span class="math-inline">\(r_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)\)</span>를 계산한다. PPO-Clip은 다음의 surrogate 목적을 최대화한다.</p>
+<p>수집 때의 정책을 <span class="math-inline">\(\pi_{\mathrm{old}}\)</span>로 고정하고 현재 정책 <span class="math-inline">\(\pi_\theta\)</span>와의 행동 확률비를 <span class="math-inline">\(\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)\)</span>라 하자. 이는 보상 <span class="math-inline">\(r_t\)</span>와 다른 양이다. <span class="math-inline">\(\widehat A_t\)</span>는 수집한 rollout에서 계산해 고정한 advantage 추정치, <span class="math-inline">\(E_t\)</span>는 그 rollout의 시점 표본 평균이다. <span class="math-inline">\(\epsilon&gt;0\)</span>은 허용할 확률비 범위의 반폭이고 <span class="math-inline">\(\operatorname{clip}(x,l,u)\)</span>는 <span class="math-inline">\(x\)</span>를 <span class="math-inline">\([l,u]\)</span> 안으로 자른다. PPO-Clip은 다음 surrogate 목적을 최대화한다.</p>
 <div class="equation">\[L^{\mathrm{clip}}(\theta)
 =E_t\!\left[
 \min\!\left(
-r_t(\theta)\widehat A_t,\,
-\operatorname{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t
+\rho_t(\theta)\widehat A_t,\,
+\operatorname{clip}(\rho_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t
 \right)\right].\]</div>
 <p><span class="math-inline">\(\widehat A_t&gt;0\)</span>이면 그 행동의 확률을 과도하게 높이는 이득을 제한하고, <span class="math-inline">\(\widehat A_t&lt;0\)</span>이면 확률을 과도하게 낮추는 이득을 제한한다. 구현에서는 rollout 때의 이전 로그확률을 보존하고 현재 로그확률과의 차이를 지수화해 비를 계산하는 편이 안정적이다. clip은 엄격한 KL 신뢰 영역 보장이 아니므로 실제 정책 변화도 진단해야 한다.</p>
-<p>수치로 clipping을 확인하자. <span class="math-inline">\(\widehat A=2\)</span>, <span class="math-inline">\(r=1.3\)</span>, <span class="math-inline">\(\epsilon=0.2\)</span>라면 원래 항은 2.6, clipped 항은 2.4이므로 목적은 2.4를 쓴다. <span class="math-inline">\(\widehat A=-2\)</span>, <span class="math-inline">\(r=0.5\)</span>라면 두 항은 -1과 -1.6이므로 -1.6을 쓴다. 두 부호에서 모두 <code>min</code>을 적용해야 한다. 구현 결과를 이 작은 예와 비교하면 부호 실수를 빨리 찾을 수 있다.</p>
+<p>수치로 clipping을 확인하자. <span class="math-inline">\(\widehat A=2\)</span>, <span class="math-inline">\(\rho=1.3\)</span>, <span class="math-inline">\(\epsilon=0.2\)</span>라면 원래 항은 2.6, clipped 항은 2.4이므로 목적은 2.4를 쓴다. <span class="math-inline">\(\widehat A=-2\)</span>, <span class="math-inline">\(\rho=0.5\)</span>라면 두 항은 -1과 -1.6이므로 -1.6을 쓴다. 두 부호에서 모두 <code>min</code>을 적용해야 한다. 구현 결과를 이 작은 예와 비교하면 부호 실수를 빨리 찾을 수 있다.</p>
 <details><summary>clipping을 적용했는데도 KL이 커질 수 있나?</summary><p>그렇다. 목적함수는 관측된 표본의 유리한 추가 이득을 제한할 뿐 모든 상태의 정책 거리를 강제로 묶지 않는다. 학습 로그에 평균 KL과 clip fraction을 함께 기록하고, 너무 큰 이동이 반복되면 epoch 수나 학습률을 조정해야 한다.</p></details>
 
 <h2>8. Reacher에서 여러 번의 갱신</h2>
