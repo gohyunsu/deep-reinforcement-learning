@@ -118,4 +118,4 @@ clip 없이 단순 정책경사 손실을 같은 batch에서 여러 번 최적�
 | PPO | 이전 로그확률의 고정, 비와 clip | 업데이트 중 이전 정책 값을 새로 계산 |
 | 평가 | 누적 환경 단계와 여러 episode | 업데이트 횟수만 가로축으로 사용 |
 
-보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 $\lambda$ 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 제출 묶음은 보고서 PDF와 필요한 코드로 구성하며 원본 지침은 용량 제한과 영상·TensorBoard 로그 제외를 명시한다. 최종 형식은 현재 공지를 기준으로 확인한다.
+보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 $\lambda$ 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 보고서 PDF와 필요한 코드를 묶어 제출하며 영상과 TensorBoard 로그는 제외한다. 파일명과 용량은 공지된 기준을 확인한다.
