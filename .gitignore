@@ -3,6 +3,8 @@
 /assignments/
 /tmp/
 /node_modules/
+/__pycache__/
+**/__pycache__/
 /.research/
 /guide/*.aux
 /guide/*.log

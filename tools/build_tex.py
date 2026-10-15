@@ -161,7 +161,7 @@ def main():
 \vspace{1.3cm}
 {\Large 슬라이드별 학습 가이드\par}
 \vspace{0.8cm}
-{\large 순차 의사결정부터 오프라인 강화학습까지\par}
+{\large 순차 의사결정부터 모델 기반 강화학습까지\par}
 \vfill
 {\large 2026년 2학기\par}
 \end{titlepage}

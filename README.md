@@ -2,7 +2,7 @@
 
 [학습 사이트](https://gohyunsu.github.io/deep-reinforcement-learning/)
 
-강화학습의 순차 의사결정부터 모방학습, 정책경사, 가치 기반 방법, 오프라인 강화학습까지 연결하는 한국어 학습 가이드입니다. 10개 장의 339개 슬라이드에 각각 대응하는 이미지와 해설을 함께 배치했습니다. 수식의 전제와 유도, 직관, 구현에서 자주 혼동하는 부분, 실제 연구 사례를 본문에서 설명하며 필요한 곳에 추가 질문을 접어 두었습니다.
+강화학습의 순차 의사결정부터 모방학습, 정책경사, 가치 기반 방법, 오프라인·모델 기반 강화학습까지 연결하는 한국어 학습 가이드입니다. 12개 장의 409개 슬라이드에 각각 대응하는 이미지와 해설을 함께 배치했습니다. 수식의 전제와 유도, 직관, 구현에서 자주 혼동하는 부분, 실제 연구 사례를 본문에서 설명하며 필요한 곳에 추가 질문을 접어 두었습니다.
 
 ## 구성
 
@@ -14,6 +14,7 @@
 | 04-1 | Q-learning, DQN, Rainbow |
 | 05-1 · 05-2 | DDPG, TD3, SAC와 벤치마크 |
 | 06 | 오프라인 강화학습 |
+| 07-1 · 07-2 | 환경 모델, MPC, Dreamer, TD-MPC |
 
 [과제 1](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw1.html)은 행동 복제와 DAgger, [과제 2](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw2.html)는 정책경사부터 PPO까지의 구현과 평가를 다룹니다. 해당 개념을 설명하는 슬라이드 아래에서도 과제 가이드로 이동할 수 있습니다.
 

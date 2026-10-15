@@ -8,5 +8,7 @@
   {"id":"04-1","file":"DRL_04-1_q_learning.pdf","title":"Q-learning과 DQN","short":"Bellman 갱신, Double DQN과 Rainbow","pages":42,"color":"blue"},
   {"id":"05-1","file":"DRL_05-1_off_policy_rl.pdf","title":"연속 행동의 Off-policy RL","short":"DDPG, TD3와 SAC","pages":37,"color":"teal"},
   {"id":"05-2","file":"DRL_05-2_rl_benchmarks.pdf","title":"강화학습 벤치마크","short":"게임, 시뮬레이션과 로봇 평가","pages":13,"color":"amber"},
-  {"id":"06","file":"DRL_06_offline_rl.pdf","title":"Offline RL","short":"분포 이동, 보수적 가치와 IQL","pages":42,"color":"blue"}
+  {"id":"06","file":"DRL_06_offline_rl.pdf","title":"Offline RL","short":"분포 이동, 보수적 가치와 IQL","pages":42,"color":"blue"},
+  {"id":"07-1","file":"DRL_07-1_mbrl.pdf","title":"Model-based RL의 기초","short":"환경 모델, CEM과 MPC","pages":30,"color":"teal"},
+  {"id":"07-2","file":"DRL_07-2_advanced_mbrl.pdf","title":"Dreamer와 TD-MPC","short":"잠재 세계모델과 가치 기반 계획","pages":40,"color":"amber"}
 ]

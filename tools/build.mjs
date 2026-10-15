@@ -6,6 +6,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const docs = path.join(root, 'docs');
 const title = 'Deep Reinforcement Learning';
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'content/manifest.json'), 'utf8'));
+const slideCount = manifest.reduce((total, chapter) => total + chapter.pages, 0);
 const assignments = JSON.parse(fs.readFileSync(path.join(root, 'content/assignments.json'), 'utf8'));
 const figures = {
   '02-1:25': ['mdp-loop.svg', '정책의 행동과 환경의 전이가 만드는 MDP의 한 단계'],
@@ -120,12 +121,12 @@ function writeIndex() {
     '<div class="card-arrow">과제 살펴보기 <span>↗</span></div></a>').join('');
   const body = '<main class="home-main"><section class="home-hero"><div class="eyebrow">' + title + '</div>' +
     '<h1>상태와 행동에서<br><em>정책 학습의 직관</em>까지</h1>' +
-    '<p>순차 의사결정의 기초에서 모방학습, 정책경사, Q-learning, 오프라인 강화학습까지. 슬라이드 한 장씩 원리와 수식을 따라가며 실제 연구 사례로 연결한다.</p>' +
+    '<p>순차 의사결정의 기초에서 모방학습, 정책경사, 가치학습, 오프라인·모델 기반 강화학습까지. 슬라이드 한 장씩 원리와 수식을 따라가며 실제 연구 사례로 연결한다.</p>' +
     '<div class="hero-actions"><a class="primary-button" href="lecture/01-1.html">처음부터 읽기 <span>→</span></a>' +
     '<a class="pdf-link" href="study-guide.pdf" download>PDF 내려받기 ↓</a>' +
-    '<span>10개 장 · 339개 슬라이드</span></div><div class="hero-formula">\\[\\pi^*=\\arg\\max_\\pi\\;\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{\\infty}\\gamma^t r_t\\right]\\]</div></section>' +
+    '<span>' + chapters.length + '개 장 · ' + slideCount + '개 슬라이드</span></div><div class="hero-formula">\\[\\pi^*=\\arg\\max_\\pi\\;\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{\\infty}\\gamma^t r_t\\right]\\]</div></section>' +
     '<section class="learning-path"><div class="section-kicker">학습 경로</div><h2>개념에서 알고리즘으로</h2>' +
-    '<div class="path-line"><span>순차 결정</span><b>→</b><span>모방학습</span><b>→</b><span>정책경사</span><b>→</b><span>가치학습</span><b>→</b><span>오프라인 RL</span></div>' +
+    '<div class="path-line"><span>순차 결정</span><b>→</b><span>모방학습</span><b>→</b><span>정책경사</span><b>→</b><span>가치학습</span><b>→</b><span>오프라인 RL</span><b>→</b><span>Model-based RL</span></div>' +
     '<div class="overview-grid">' + chapterCards('') + '</div></section>' +
     '<section class="learning-path"><div class="section-kicker">ASSIGNMENTS</div><h2>과제로 연결하기</h2>' +
     '<div class="overview-grid">' + assignmentCards + '</div></section>' +
