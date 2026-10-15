@@ -69,5 +69,6 @@ for (const file of htmlFiles) {
 }
 const pdf = path.join(docs, 'study-guide.pdf');
 if (!fs.existsSync(pdf) || fs.statSync(pdf).size < 100000) fail('Missing compiled PDF');
-if (slides !== 339) fail('Slide total mismatch: ' + slides);
+const expectedSlides = manifest.reduce((total, chapter) => total + chapter.pages, 0);
+if (slides !== expectedSlides) fail('Slide total mismatch: ' + slides + ' expected ' + expectedSlides);
 console.log('Checked ' + slides + ' slides, ' + assignments.length + ' assignments, ' + htmlFiles.length + ' pages and local links.');
