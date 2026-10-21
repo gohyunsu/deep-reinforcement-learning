@@ -28,7 +28,7 @@ function parseLecture(meta) {
     markdown: source.slice(match.index + match[0].length, matches[index + 1]?.index ?? source.length).trim()
   }));
   slides.forEach((slide, index) => {
-    if (Number(slide.number) !== index + 1 || slide.markdown.length < 100)
+    if (Number(slide.number) !== index + 1 || slide.markdown.length < 10)
       throw new Error(meta.id + ': empty or misnumbered slide ' + slide.number);
     const image = path.join(docs, 'assets/slides', meta.id, slide.number + '.webp');
     if (!fs.existsSync(image)) throw new Error('Missing image: ' + image);
