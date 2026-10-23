@@ -15,14 +15,30 @@
 =\frac1N\sum_i\sum_t\gamma^t
 \nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.\]</div>
 <p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 <strong>같은 초기 상태 기준 목적</strong> <span class="math-inline">\(J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]\)</span>에 대한 추정량이다. 두 번째 식에 <span class="math-inline">\(\gamma^t\)</span>가 있는 이유는 <span class="math-inline">\(\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k\)</span>이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 <span class="math-inline">\(G_t\)</span>만 쓴다. <span class="math-inline">\(\gamma=1\)</span>이면 동일하지만, <span class="math-inline">\(\gamma&lt;1\)</span>이면 원래 <span class="math-inline">\(J\)</span>의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.</p>
+<p><strong>이 과제의 할인 reward-to-go 식은 바깥 <span class="math-inline">\(\gamma^t\)</span> 없이 <span class="math-inline">\(G_t\)</span>만 정책 항에 곱한다.</strong> 위의 엄밀한 목적함수 미분과 과제에서 구현하는 추정량을 혼동하지 않도록 구분했다. 실제 코드를 점검할 때는 과제의 시점별 할인 <span class="math-inline">\(G_t\)</span>와 전체 궤적 반환 계산부터 맞춘다.</p>
 <p>세 단계의 보상이 <span class="math-inline">\([2,-1,4]\)</span>이고 <span class="math-inline">\(\gamma=1\)</span>이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 <span class="math-inline">\([5,3,4]\)</span>다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.</p>
 <h2>2. CartPole 비교 실험</h2>
-<p>이산 행동 CartPole에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 <strong>각각</strong> 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계다.</p>
+<p>이산 행동 <strong>CartPole-v0</strong>에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 <strong>각각</strong> 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계이며 각각 100 iteration을 실행한다. 네 가지 설정을 두 batch에 적용하므로 총 <strong>8개 실행</strong>이다.</p>
+<p>네 비교쌍은 다음과 같다. 각 쌍의 앞은 batch 1000, 뒤는 batch 4000이다.</p>
+<ol>
+<li>전체 궤적 반환·정규화 없음: cartpole / cartpole_lb.</li>
+<li>Reward-to-go·정규화 없음: cartpole_rtg / cartpole_lb_rtg.</li>
+<li>전체 궤적 반환·정규화 있음: cartpole_na / cartpole_lb_na.</li>
+<li>Reward-to-go·정규화 있음: cartpole_rtg_na / cartpole_lb_rtg_na.</li>
+</ol>
+<p>모든 실행의 공통 설정은 CartPole-v0와 100 iteration이다. 작은 batch는 1000, 큰 batch는 4000 환경 단계이며 reward-to-go는 -rtg, advantage 정규화는 -na flag로 켠다. 첫 그래프에는 작은 batch 네 곡선, 두 번째에는 큰 batch 네 곡선을 넣는다. 과제의 점검 목표는 가장 좋은 설정이 평균 반환 약 200에 도달하는 것이다. 이는 실제 결과를 대신하는 수치가 아니다.</p>
 <p>정규화는 한 batch의 advantage에서 평균을 빼고 표준편차로 나누는 연산이다. 값의 상대적 순서는 유지하면서 업데이트의 크기를 바꾸지만, 모든 환경에서 항상 이득이라는 보장은 없다. 비교할 때 학습률, 네트워크 구조와 평가 방법은 고정하고, 보고서에는 실제 실행한 명령 옵션을 남긴다.</p>
 <p>모든 학습 곡선의 가로축은 <strong>정책 업데이트 횟수보다 누적 환경 단계 수</strong>다. batch가 큰 방법은 한 번 업데이트 전에 더 많은 상호작용을 사용하므로 업데이트 횟수만 비교하면 표본 효율을 오해하기 쉽다.</p>
 <details><summary>큰 batch의 곡선이 매끄러우면 알고리즘이 더 좋은 것일까?</summary><p>큰 batch는 기울기 표본 분산을 줄일 수 있지만 업데이트당 환경 비용이 더 든다. 같은 환경 단계 수에서의 최종 성과와 여러 시드의 변동을 비교해야 공정하다.</p></details>
 
 <p>예를 들어 1000단계 batch로 20번 업데이트한 방법은 2만 환경 단계를 썼고, 4000단계 batch로 20번 업데이트한 방법은 8만 단계를 썼다. 같은 “20번 업데이트”가 같은 데이터 예산이 아닌 셈이다. 반환 그래프의 가로축을 환경 단계로 맞춘 뒤, 곡선의 흔들림과 목표 점수 도달 시간을 함께 해석해야 한다.</p>
+<h3>CartPole의 네 질문에 답하는 법</h3>
+<ol>
+<li><strong>정규화가 없을 때 어느 반환 추정이 나았나?</strong> 같은 batch 안에서 전체 반환과 reward-to-go를 직접 비교한다. reward-to-go는 행동 이전 보상이라는 잡음을 없애므로 분산이 작아질 수 있지만, 실제 성능의 우열은 두 그래프가 정한다. 관찰한 도달 속도와 최종 반환을 함께 적는다.</li>
+<li><strong>Advantage 정규화가 도움이 되었나?</strong> 같은 batch·같은 반환 추정에서 -na 유무만 비교한다. 정규화는 batch 평균을 빼고 표준편차로 나누어 gradient 규모를 바꾼다. 개선이 없거나 성능이 낮아져도 그 결과를 그대로 보고하고, 작은 batch의 불안정한 통계나 learning rate와의 상호작용을 논의한다.</li>
+<li><strong>Batch 크기가 영향을 주었나?</strong> 동일한 반환 추정·정규화 조건에서 1000과 4000을 비교한다. 큰 batch는 표본 gradient 변동을 줄일 수 있지만 업데이트당 상호작용을 네 배 사용한다. 반드시 같은 <strong>환경 단계 수</strong>에서의 반환을 비교한다.</li>
+<li><strong>정확한 실행 명령은?</strong> 보고서에는 실행한 8개 명령의 환경명, -n, -b, -rtg, -na, 실험명과 기본값에서 바꾼 다른 flag를 그대로 남긴다. 위 표의 실험명만 적으면 변경한 learning rate나 네트워크 설정을 재현할 수 없다.</li>
+</ol>
 <h2>3. 상태 가치 baseline</h2>
 <p>파라미터 <span class="math-inline">\(\phi\)</span>인 가치망 <span class="math-inline">\(V_\phi(s_t)\)</span>는 상태 <span class="math-inline">\(s_t\)</span>에서 현재 정책을 계속 따를 때의 기대 미래 반환을 추정한다. 정책 업데이트에는 추정 advantage <span class="math-inline">\(A_t=G_t-V_\phi(s_t)\)</span>를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.</p>
 <p>행동에 의존하지 않는 baseline의 기대 기여는</p>
@@ -34,6 +50,8 @@
 <h2>4. HalfCheetah에서 baseline 평가</h2>
 <p>연속 제어 HalfCheetah에서는 reward-to-go 정책경사와 가치 baseline을 붙인 버전을 비교한다. 원본 실험 설정은 할인율 <span class="math-inline">\(0.95\)</span>, batch 5000, baseline 학습 단계 수와 학습률을 명시한다. baseline이 더 정확하면 advantage의 잡음이 줄 수 있지만, baseline을 지나치게 적게 또는 과하게 학습하면 정책 갱신이 흔들릴 수 있다.</p>
 <p>보고서에는 baseline 손실 곡선과 평가 반환 곡선을 함께 그린다. baseline gradient step 수나 학습률을 줄인 추가 실험에서는 다른 설정을 고정해야 원인을 비교할 수 있다. 손실이 내려갔다고 성과가 반드시 오르지는 않으므로 두 그래프를 나란히 해석한다.</p>
+<p>기본 비교는 HalfCheetah-v4, 100 iteration, batch 5000, reward-to-go, 할인율 0.95, actor 학습률 0.01을 공통으로 둔다. baseline 버전은 baseline 학습률 0.01과 매 정책 갱신당 baseline gradient step 5를 추가한다. 과제의 구현 점검 목표는 baseline 버전의 평균 반환 300 초과다.</p>
+<p><strong>추가 질문: baseline 학습 step 수 또는 학습률을 낮추면?</strong> 가치망이 같은 rollout을 덜 학습해 baseline 손실이 느리게 감소하거나 높게 남을 수 있다. 그러면 <span class="math-inline">\(G_t-V_\phi(s_t)\)</span>의 오차가 커져 actor gradient가 더 흔들릴 수 있다. 그러나 지나친 baseline 갱신을 줄여 오히려 좋아지는 경우도 있으므로 두 곡선의 실제 변화와 다른 설정의 고정 여부를 근거로 답한다. baseline 손실만 낮다는 이유로 정책 성능 향상을 단정하지 않는다.</p>
 <h2>5. GAE의 계산</h2>
 <p>한 단계 TD 잔차를 <span class="math-inline">\(\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)\)</span>라고 두자. <span class="math-inline">\(\lambda\in[0,1]\)</span>는 긴 반환의 반영 정도, <span class="math-inline">\(T\)</span>는 이번 rollout이 끝나는 시점이다. <span class="math-inline">\(\widehat A_t\)</span>는 시점 <span class="math-inline">\(t\)</span>의 GAE 추정치이고 경계에서는 <span class="math-inline">\(\widehat A_T=0\)</span>으로 둔다. 여러 길이의 TD 잔차를 합치면</p>
 <div class="equation">\[\widehat A_t^{\mathrm{GAE}(\gamma,\lambda)}
@@ -43,6 +61,8 @@
 <p>두 TD 잔차가 <span class="math-inline">\(\delta_t=2\)</span>, <span class="math-inline">\(\delta_{t+1}=-1\)</span>이고 <span class="math-inline">\(\gamma=0.9\)</span>, <span class="math-inline">\(\lambda=0.95\)</span>라면 뒤에서부터 계산한 <span class="math-inline">\(\widehat A_t=2+0.9\cdot0.95\cdot(-1)=1.145\)</span>다. 시간 제한 없이 진짜 종료된 뒤의 잔차는 이어 붙이지 않는다. 먼저 2~3단계짜리 인공 rollout로 이 계산을 재현하면 실제 환경의 긴 배열에서 생기는 off-by-one 오류를 찾기 쉽다.</p>
 <h2>6. HumanoidStandup의 <span class="math-inline">\(\lambda\)</span> 비교</h2>
 <p>HumanoidStandup에서는 <span class="math-inline">\(\lambda=0\)</span>, <span class="math-inline">\(0.95\)</span>, <span class="math-inline">\(1\)</span>을 같은 환경·네트워크·batch·학습률로 비교한다. 과제의 명시적인 과업 길이와 할인율을 유지해야 곡선의 차이를 <span class="math-inline">\(\lambda\)</span>에 연결할 수 있다. 한 그래프에 평가 반환과 누적 환경 단계를 표시하고, 어떤 값이 더 빨리 좋아졌으며 최종 성과와 변동이 어떠했는지 설명한다.</p>
+<p>실험의 공통 조건은 HumanoidStandup-v5, episode 길이 100, 할인율 0.99, 50 iteration, 3개 hidden layer, 폭 128, batch 2000, actor 학습률 0.001, reward-to-go와 baseline 사용이다. 과제의 점검 기준은 가장 좋은 실행에서 평균 점수 약 <span class="math-inline">\(1.15\times10^4\)</span>다.</p>
+<p><strong><span class="math-inline">\(\lambda=0\)</span>과 1은 각각 무엇인가?</strong> 0이면 <span class="math-inline">\(\hat A_t=\delta_t\)</span>로 한 단계 TD 오차만 쓴다. 1이면 <span class="math-inline">\(\hat A_t=\sum_l\gamma^l\delta_{t+l}\)</span>로 관측 가능한 긴 구간을 합치며, 완결된 episode에서는 Monte Carlo 반환에서 현재 <span class="math-inline">\(V\)</span>를 뺀 형태로 망원합된다. 시간 제한으로 잘렸다면 끝에서 bootstrap한 가치가 남는다. 짧은 쪽은 가치망 편향에, 긴 쪽은 반환 분산에 더 민감할 수 있다. 세 곡선의 도달 속도와 최종 점수로 이 절충을 해석한다.</p>
 <p>단일 실행에서 특정 <span class="math-inline">\(\lambda\)</span>가 더 좋아 보인다고 일반적인 우위를 주장할 수는 없다. 가치함수의 품질, 보상의 지연, 에피소드 길이에 따라 유리한 편향–분산 절충이 달라진다.</p>
 <details><summary><span class="math-inline">\(\lambda=1\)</span>이면 가치함수를 전혀 쓰지 않나?</summary><p>완전한 episode의 끝까지 모두 관측하고 끝에서 부트스트랩하지 않으면 GAE의 망원합이 Monte Carlo 반환에서 현재 가치 추정치를 뺀 형태가 된다. 궤적이 중간에 잘리면 끝의 가치 추정이 남을 수 있다. 종료 처리까지 함께 봐야 한다.</p></details>
 
@@ -60,7 +80,9 @@
 
 <h2>8. Reacher에서 여러 번의 갱신</h2>
 <p>Reacher 과제는 GAE와 baseline을 공통으로 쓰는 정책경사 버전과 PPO 버전을 비교한다. PPO는 같은 on-policy batch를 여러 epoch와 minibatch에 걸쳐 사용한다. 원본 설정은 PPO 4 epoch, 4 minibatch를 사용한다. 데이터를 여러 번 보되 확률비와 clipping으로 정책 변화가 지나치게 커졌을 때의 이득을 제한하려는 것이다.</p>
+<p>비교의 공통 조건은 Reacher-v4, episode 길이 1000, 할인율 0.99, 100 iteration, batch 5000, 학습률 0.003, advantage 정규화, reward-to-go, baseline, GAE <span class="math-inline">\(\lambda=0.97\)</span>이다. PPO에만 4 epoch·4 minibatch를 더한다. 과제의 점검 기준은 PPO 평균 점수가 약 -10이며 적어도 -15 수준에 도달하는 것이다. 최종 정책 두 개의 반환을 같은 환경 단계 예산에서 비교한다.</p>
 <p>clip 없이 단순 정책경사 손실을 같은 batch에서 여러 번 최적화하면 첫 갱신 뒤 데이터가 이미 이전 정책의 데이터가 된다. 이후 갱신은 현재 정책 분포를 반영하지 못하고 과도한 확률 변화로 불안정해질 수 있다. 실험 결과를 설명할 때 단지 PPO의 점수뿐 아니라 같은 환경 단계 수에서의 곡선과 변동을 함께 비교한다.</p>
+<p><strong>질문의 핵심은 surrogate 목적을 제거한 채 여러 batch 업데이트를 할 때의 결과와 이유</strong>다. 첫 업데이트 뒤 현재 정책과 데이터 수집 정책이 달라졌는데도 옛 행동을 on-policy처럼 계속 가중한다. 그러면 유리해 보이는 표본 행동의 확률을 지나치게 바꿀 수 있다. 실제 실험에서 반드시 점수가 하락한다는 법칙은 아니지만, 업데이트의 불안정성과 표본 분포의 어긋남을 근거로 관찰한 결과를 설명할 수 있다.</p>
 <h2>구현 점검표</h2>
 <table>
 <thead>
@@ -101,5 +123,5 @@
 <td>업데이트 횟수만 가로축으로 사용</td>
 </tr>
 </tbody></table>
-<p>보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 <span class="math-inline">\(\lambda\)</span> 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 보고서 PDF와 필요한 코드를 묶어 제출하며 영상과 TensorBoard 로그는 제외한다. 파일명과 용량은 공지된 기준을 확인한다.</p>
+<p>보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 <span class="math-inline">\(\lambda\)</span> 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 보고서 PDF와 필요한 코드를 묶어 제출하며 영상과 TensorBoard 로그는 제외한다. 과제의 압축 파일 크기 기준은 <strong>20 MB 미만</strong>이다.</p>
 </article><nav class="assignment-related"><h2>연결되는 슬라이드</h2><div><a href="../lecture/02-2.html#s11">02-2 / 11 · Monte Carlo 정책경사 ↗</a><a href="../lecture/02-2.html#s12">02-2 / 12 · REINFORCE의 반복 ↗</a><a href="../lecture/02-2.html#s19">02-2 / 19 · 더 나은 가중치의 계보 ↗</a><a href="../lecture/03-1.html#s10">03-1 / 10 · 과거 보상은 현재 행동의 결과가 아니다 ↗</a><a href="../lecture/03-1.html#s24">03-1 / 24 · 상태 baseline을 생각하기 ↗</a><a href="../lecture/03-2.html#s09">03-2 / 09 · GAE의 가중 평균과 재귀 ↗</a><a href="../lecture/03-2.html#s16">03-2 / 16 · PPO를 구성하는 네 조각 ↗</a></div></nav><footer class="site-footer">Deep Reinforcement Learning</footer></main></div><dialog id="slide-dialog" class="slide-dialog"><button type="button" class="dialog-close" data-dialog-close aria-label="이미지 닫기">×</button><img alt="확대한 슬라이드"><p></p></dialog><dialog id="search-dialog" class="search-dialog"><div class="search-panel"><div class="search-input-row"><span>⌕</span><input type="search" id="search-input" placeholder="개념, 사례, 수식 검색" aria-label="전체 내용 검색"><button type="button" data-search-close aria-label="검색 닫기">×</button></div><div id="search-results" class="search-results"></div><p class="search-hint">슬라이드 제목과 설명을 함께 검색합니다. Esc로 닫기</p></div></dialog><script src="../assets/search-index.js"></script><script src="../assets/site.js"></script></body></html>

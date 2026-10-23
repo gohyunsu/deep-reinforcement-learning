@@ -44,6 +44,15 @@ for (const chapter of manifest) {
 for (const assignment of assignments) {
   const page = path.join(docs, 'assignments', assignment.id + '.html');
   if (!fs.existsSync(page)) fail('Missing assignment page: ' + assignment.id);
+  const pageHtml = fs.readFileSync(page, 'utf8');
+  const questionCoverage = {
+    hw1: ['환경 튜토리얼의 세 질문', 'Ant-v4', '네 가지 이상의 값', 'BC와 DAgger 비교'],
+    hw2: ['CartPole의 네 질문', 'HalfCheetah-v4', 'HumanoidStandup-v5', 'Reacher-v4'],
+    hw3: ['먼저 확인하는 DQN T/F', 'Toy 실험의 두 질문', 'Asterix-v5', '0.001', '0.05']
+  };
+  for (const term of questionCoverage[assignment.id] || []) {
+    if (!pageHtml.includes(term)) fail('Missing assignment question coverage: ' + assignment.id + ' / ' + term);
+  }
   for (const ref of assignment.slides) {
     const [id, number] = ref.split(':');
     const chapterPage = fs.readFileSync(path.join(docs, 'lecture', id + '.html'), 'utf8');

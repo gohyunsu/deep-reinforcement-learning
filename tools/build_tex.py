@@ -176,7 +176,9 @@ def main():
         parts.append(r"\clearpage")
     parts.append(r"\setlength{\parskip}{0.35em}")
     parts.append(r"\section{과제 가이드}")
-    for assignment in assignments:
+    for index, assignment in enumerate(assignments):
+        if index:
+            parts.append(r"\clearpage")
         source = (CONTENT / "assignments" / assignment["file"]).read_text(encoding="utf-8")
         first, rest = source.split("\n", 1)
         parts.append(r"\subsection{" + escape(first.removeprefix("# ")) + "}\n")

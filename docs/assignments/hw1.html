@@ -7,6 +7,13 @@
 </ul>
 <h2>1. 환경 인터페이스를 먼저 확인하기</h2>
 <p>환경을 초기화하면 시작 관측이 나오고, 한 단계 진행 함수에는 행동을 넣어 다음 관측·보상·종료 여부를 받는다. 과제에서 묻는 이산 행동과 연속 행동의 차이는 정책 출력이 무엇을 뜻하는지 결정한다. 이산 행동은 후보 중 하나를 고르고, 연속 행동은 구간 안의 실수 벡터를 낸다. Ant와 다른 MuJoCo 보행 환경은 연속 관절 제어다.</p>
+<h3>환경 튜토리얼의 세 질문</h3>
+<ol>
+<li><strong>step(action)의 역할과 반환값은?</strong> 행동을 환경에 적용해 한 시점 진행한다. Gymnasium 인터페이스에서는 (observation, reward, terminated, truncated, info)를 반환한다. terminated는 과업의 실제 종료, truncated는 시간 제한 등 외부 중단이다. 다음 실행 여부는 보통 두 flag의 논리합으로 판단한다.</li>
+<li><strong>reset()의 역할과 반환값은?</strong> 새 episode를 시작하고 내부 상태를 초기화한다. Gymnasium에서는 (initial_observation, info)를 반환한다. 이전 episode의 마지막 관측을 그대로 이어 쓰지 않는다.</li>
+<li><strong>이산·연속 행동공간은 어떻게 확인하나?</strong> env.action_space를 출력하거나 형식을 확인한다. Discrete(n)은 정수 행동 <span class="math-inline">\(0,\ldots,n-1\)</span>, Box(low, high, shape)는 범위와 차원을 가진 연속 벡터다. env.action_space.sample()로 실제 표본의 모양을 확인할 수도 있다.</li>
+</ol>
+<p>오래된 Gym 버전은 reset()이 관측 하나만, step()이 (observation, reward, done, info) 네 항목을 반환할 수 있다. 따라서 설명할 때는 <strong>실제로 실행한 라이브러리 버전과 starter code의 unpacking 방식</strong>을 함께 확인한다. info는 보조 진단 정보이고 보상이나 관측을 대신하지 않는다.</p>
 <p>한 rollout은 초기화 → 관측으로 행동 선택 → 환경 진행 → 전이 저장 → 종료까지 반복으로 만든다. 환경 API의 버전에 따라 종료와 시간 제한이 따로 반환될 수 있으므로, 스타터 코드가 실제로 어떤 형식을 기대하는지 먼저 확인한다. 관측·행동·보상 배열의 첫 차원은 시간이며, 하나의 궤적 안에서는 길이가 맞아야 한다.</p>
 <details><summary>한 단계 진행에서 받은 종료 신호를 왜 따로 보관할까?</summary><p>실제 실패·성공으로 끝난 episode와 시간 제한 때문에 끊긴 rollout은 가치함수 학습에서 다르게 처리될 수 있다. 이 과제는 BC 중심이어도 평가 episode 수와 길이를 정확히 세려면 종료 원인을 기록하는 편이 좋다.</p></details>
 
@@ -32,14 +39,15 @@
 <details><summary>훈련 손실이 낮은데 행동이 늘 경계값에 붙는다면?</summary><p>정책 출력의 tanh와 환경의 clip을 중복 적용했거나, 정규화된 전문가 행동과 원래 단위의 정책 출력을 비교했을 수 있다. 평균 행동과 실제 환경에 전달된 행동을 각각 기록하면 어디서 포화되는지 찾을 수 있다.</p></details>
 
 <h2>3. BC 실험과 숫자의 의미</h2>
-<p>첫 실험은 Ant와 선택한 보행 환경 하나에서 BC 정책을 평가한다. 보고할 값은 각 정책 rollout 반환의 평균과 표준편차다. <span class="math-inline">\(K\)</span>번의 episode 반환을 <span class="math-inline">\(R_1,\ldots,R_K\)</span>라 하면 <span class="math-inline">\(\bar R=K^{-1}\sum_kR_k\)</span>이고 표본 표준편차는 <span class="math-inline">\(\sqrt{\sum_k(R_k-\bar R)^2/(K-1)}\)</span>다. 한 episode만 수집해 놓고 표준편차를 보고할 수는 없다.</p>
+<p>첫 실험은 <strong>Ant-v4</strong>와 <strong>Walker2d-v4·HalfCheetah-v4·Hopper-v4 중 하나</strong>에서 BC 정책을 평가한다. Ant에서는 전문가 성과의 30% 이상이 구현 점검용 목표다. 전문가 반환은 실행 로그의 Initial_DataCollection_AverageReturn에서 확인한다. 보고할 값은 각 정책 rollout 반환의 평균과 표준편차다. <span class="math-inline">\(K\)</span>번의 episode 반환을 <span class="math-inline">\(R_1,\ldots,R_K\)</span>라 하면 <span class="math-inline">\(\bar R=K^{-1}\sum_kR_k\)</span>이고 표본 표준편차는 <span class="math-inline">\(\sqrt{\sum_k(R_k-\bar R)^2/(K-1)}\)</span>다. 한 episode만 수집해 놓고 표준편차를 보고할 수는 없다.</p>
 <p>평가 표본 예산이 episode 길이보다 커야 여러 rollout을 얻는다. 예컨대 최대 길이가 1000단계이고 평가 예산이 5000단계이면 대략 다섯 episode를 얻는다. 표에는 환경, 전문가 성과, BC 평균±표준편차, 평가 episode 수, 훈련 데이터 양, 네트워크 크기와 업데이트 수를 함께 적으면 비교가 공정해진다.</p>
-<p>실행 영상을 한 장면으로 확인하는 이유는 반환 숫자가 포착하지 못하는 이상 행동을 찾기 위해서다. 로봇이 제자리에서 높은 보상을 받거나 초기 몇 단계만 걷고 넘어지는 모습을 보면 보상 함수와 종료 조건을 다시 볼 수 있다.</p>
+<p><strong>평가 rollout의 화면 한 장과 설명을 보고서에 넣는다.</strong> 실행 영상을 확인하는 이유는 반환 숫자가 포착하지 못하는 이상 행동을 찾기 위해서다. 로봇이 제자리에서 높은 보상을 받거나 초기 몇 단계만 걷고 넘어지는 모습을 보면 보상 함수와 종료 조건을 다시 볼 수 있다.</p>
 <p>계산 예로 세 episode의 반환이 90, 100, 110이면 평균은 100이다. <span class="math-inline">\(s_R\)</span>을 이 반환들의 표본 표준편차라 쓰면 앞서 정의한 <span class="math-inline">\(K-1\)</span> 분모의 식에서</p>
 <div class="equation">\[s_R=\sqrt{\frac{(90-100)^2+(100-100)^2+(110-100)^2}{3-1}}=10.\]</div>
 <p><code>100 ± 10</code>이라고만 쓰면 세 번의 실행 결과인지 여러 시드 평균인지 알기 어려우므로 episode 수와 시드 수도 함께 적는다. 전문가와 BC를 비교할 때 평가 환경의 초기 상태 범위를 같게 맞추는 것도 중요하다.</p>
 <h2>4. 하이퍼파라미터 실험</h2>
 <p>하나의 요인에 대해 기본 설정을 포함한 <strong>네 가지 이상의 값</strong>을 비교한다. 예를 들어 시연량을 바꾸면 다른 조건인 네트워크 크기·훈련 단계·평가 episode를 고정한다. 여러 조건을 동시에 바꾸면 어느 요인이 성능 차이를 만들었는지 알기 어렵다.</p>
+<p>고를 수 있는 변수에는 정책 학습 gradient step 수(num_agent_train_steps_per_iter, 기본 1000), 수집 데이터 양(batch_size, 기본 1000), 지도학습 minibatch 크기(train_batch_size, 기본 100), MLP 층 수(n_layers, 기본 2), 폭(size, 기본 64), 학습률(learning_rate, 기본 <span class="math-inline">\(5\times10^{-3}\)</span>)이 있다. 예를 들어 데이터 양을 고르면 <strong>기본값 1000을 포함한 네 값</strong>을 같은 환경에서 시험하고, 선택 이유·각 값·평가 평균 반환을 그래프와 설명에 함께 적는다. 여기에 나열한 값은 starter 설정의 기준값이지 모든 환경에서 최적인 값은 아니다.</p>
 <p>가로축은 바꾼 변수, 세로축은 평가 반환의 평균으로 그리고 가능하면 표준편차나 여러 시드 결과를 표시한다. 시연량을 늘렸는데 성과가 멈춘다면 모델 용량보다 시연의 다양성이나 상태 분포 이동이 병목일 수 있다. 학습 단계를 늘렸는데 훈련 손실만 내려간다면 과적합 또는 배포 분포 차이를 의심할 수 있다.</p>
 <p>예를 들어 시연 수를 100, 250, 500, 1000개로 늘리는 실험에서는 나머지 학습 설정을 고정해야 데이터 양의 효과를 읽을 수 있다. 대신 데이터 100개 조건에 업데이트 1000번, 데이터 1000개 조건에 업데이트 100번을 주면 두 조건은 데이터 양뿐 아니라 각 표본을 본 횟수도 달라진다. <strong>환경 단계 수, gradient update 수, 전문가 질의 수</strong>를 서로 다른 예산으로 기록하자.</p>
 <h2>5. DAgger의 반복</h2>
@@ -53,7 +61,7 @@
 <details><summary>전문가 라벨을 매 단계 받을 수 없으면?</summary><p>질의 비용이 크면 위험하거나 불확실한 상태를 우선 선택해 사람에게 묻는 방식을 고려할 수 있다. 다만 그 경우 모든 방문 상태에 전문가 라벨을 붙이는 표준 DAgger와 데이터 분포가 달라지므로, 질의 기준과 횟수를 실험에 기록해야 한다.</p></details>
 
 <h2>6. BC와 DAgger 비교</h2>
-<p>두 환경에서 DAgger 반복 횟수에 따른 평균 반환 곡선을 그린다. 비교 기준선으로 BC와 전문가의 성과를 함께 표시하면 분포 이동 교정의 효과를 해석하기 쉽다. DAgger가 개선되어도 전문가까지 닿지 못한다면 전문가 라벨의 부족, 현재 정책이 방문한 상태의 다양성, 정책 표현력이나 최적화 설정을 살핀다.</p>
+<p>앞서 BC를 시험한 <strong>같은 두 환경</strong>에서 DAgger 반복 횟수에 따른 평균 반환 곡선을 그린다. 비교 기준선으로 BC와 전문가의 성과를 함께 표시하면 분포 이동 교정의 효과를 해석하기 쉽다. DAgger가 개선되어도 전문가까지 닿지 못한다면 전문가 라벨의 부족, 현재 정책이 방문한 상태의 다양성, 정책 표현력이나 최적화 설정을 살핀다. 두 환경의 그래프에는 환경 이름, 네트워크 구조, 학습 데이터 양과 반복 수를 명시한다.</p>
 <p>곡선의 가로축이 반복 횟수이면 각 반복에서 추가한 데이터 양도 설명해야 한다. 반복 수가 같은 두 실험이라도 한 번에 수집한 상태가 다르면 사용한 전문가 피드백 예산이 다르기 때문이다.</p>
 <h2>결과를 정리하는 형식</h2>
 <table>
@@ -90,5 +98,7 @@
 <td>차이를 한 요인으로 과장하지 않았나?</td>
 </tr>
 </tbody></table>
-<p>보고서에는 실제 실행한 설정과 결과를 쓴다. 보고서 PDF와 필요한 코드·노트북을 하나의 압축 파일로 묶고, 영상과 TensorBoard 로그는 제외한다. 제출 시에는 공지된 파일명과 용량 기준을 확인한다.</p>
+<p>보고서에는 실제 실행한 설정과 결과를 쓴다. 보고서 PDF와 필요한 코드·노트북을 하나의 압축 파일로 묶고, 영상과 TensorBoard 로그는 제외한다. 과제의 압축 파일 크기 기준은 <strong>20 MB 미만</strong>이다.</p>
+<h3>질문에 답을 쓸 때 구분할 것</h3>
+<p>환경 API의 반환값, BC와 DAgger의 데이터 흐름은 위의 개념과 코드에서 직접 확인할 수 있다. 반면 <strong>두 환경의 실제 평균 반환, 네 가지 설정의 그래프, 실행 화면, DAgger의 개선 폭</strong>은 구현과 실행에서 나온 결과여야 한다. 실험 전 예상과 실행 후 관찰을 분리하고, 점수만 보고 “DAgger가 항상 우월하다”처럼 일반화하지 않는다.</p>
 </article><nav class="assignment-related"><h2>연결되는 슬라이드</h2><div><a href="../lecture/01-2.html#s08">01-2 / 08 · Behavioral Cloning의 목적함수 ↗</a><a href="../lecture/01-2.html#s13">01-2 / 13 · 첫째 실패: 오류의 누적 ↗</a><a href="../lecture/01-2.html#s19">01-2 / 19 · DAgger의 네 단계 ↗</a><a href="../lecture/01-2.html#s20">01-2 / 20 · 사람이 개입하는 DAgger ↗</a><a href="../lecture/02-1.html#s11">02-1 / 11 · 행동 복제의 기준선 ↗</a><a href="../lecture/02-1.html#s13">02-1 / 13 · DAgger의 상태 분포 수정 ↗</a></div></nav><footer class="site-footer">Deep Reinforcement Learning</footer></main></div><dialog id="slide-dialog" class="slide-dialog"><button type="button" class="dialog-close" data-dialog-close aria-label="이미지 닫기">×</button><img alt="확대한 슬라이드"><p></p></dialog><dialog id="search-dialog" class="search-dialog"><div class="search-panel"><div class="search-input-row"><span>⌕</span><input type="search" id="search-input" placeholder="개념, 사례, 수식 검색" aria-label="전체 내용 검색"><button type="button" data-search-close aria-label="검색 닫기">×</button></div><div id="search-results" class="search-results"></div><p class="search-hint">슬라이드 제목과 설명을 함께 검색합니다. Esc로 닫기</p></div></dialog><script src="../assets/search-index.js"></script><script src="../assets/site.js"></script></body></html>

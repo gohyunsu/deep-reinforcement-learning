@@ -3096,6 +3096,16 @@ Dreamer의 시각 제어 결과는 \textbf{고차원 관측}에서 잠재 표현
 
 환경을 초기화하면 시작 관측이 나오고, 한 단계 진행 함수에는 행동을 넣어 다음 관측·보상·종료 여부를 받는다. 과제에서 묻는 이산 행동과 연속 행동의 차이는 정책 출력이 무엇을 뜻하는지 결정한다. 이산 행동은 후보 중 하나를 고르고, 연속 행동은 구간 안의 실수 벡터를 낸다. Ant와 다른 MuJoCo 보행 환경은 연속 관절 제어다.\par
 
+\subsubsection{환경 튜토리얼의 세 질문}
+
+\begin{enumerate}
+\item \textbf{step(action)의 역할과 반환값은?} 행동을 환경에 적용해 한 시점 진행한다. Gymnasium 인터페이스에서는 (observation, reward, terminated, truncated, info)를 반환한다. terminated는 과업의 실제 종료, truncated는 시간 제한 등 외부 중단이다. 다음 실행 여부는 보통 두 flag의 논리합으로 판단한다.
+\item \textbf{reset()의 역할과 반환값은?} 새 episode를 시작하고 내부 상태를 초기화한다. Gymnasium에서는 (initial\_observation, info)를 반환한다. 이전 episode의 마지막 관측을 그대로 이어 쓰지 않는다.
+\item \textbf{이산·연속 행동공간은 어떻게 확인하나?} env.action\_space를 출력하거나 형식을 확인한다. Discrete(n)은 정수 행동 $0,\ldots,n-1$, Box(low, high, shape)는 범위와 차원을 가진 연속 벡터다. env.action\_space.sample()로 실제 표본의 모양을 확인할 수도 있다.
+\end{enumerate}
+
+오래된 Gym 버전은 reset()이 관측 하나만, step()이 (observation, reward, done, info) 네 항목을 반환할 수 있다. 따라서 설명할 때는 \textbf{실제로 실행한 라이브러리 버전과 starter code의 unpacking 방식}을 함께 확인한다. info는 보조 진단 정보이고 보상이나 관측을 대신하지 않는다.\par
+
 한 rollout은 초기화 → 관측으로 행동 선택 → 환경 진행 → 전이 저장 → 종료까지 반복으로 만든다. 환경 API의 버전에 따라 종료와 시간 제한이 따로 반환될 수 있으므로, 스타터 코드가 실제로 어떤 형식을 기대하는지 먼저 확인한다. 관측·행동·보상 배열의 첫 차원은 시간이며, 하나의 궤적 안에서는 길이가 맞아야 한다.\par
 
 \par\medskip\noindent\textbf{한 단계 진행에서 받은 종료 신호를 왜 따로 보관할까?}\quad 실제 실패·성공으로 끝난 episode와 시간 제한 때문에 끊긴 rollout은 가치함수 학습에서 다르게 처리될 수 있다. 이 과제는 BC 중심이어도 평가 episode 수와 길이를 정확히 세려면 종료 원인을 기록하는 편이 좋다.\par
@@ -3138,11 +3148,11 @@ $I$는 $d_a$차원 항등행렬, $\|\cdot\|_2$는 유클리드 길이, $\log(2\p
 
 \subsubsection{3. BC 실험과 숫자의 의미}
 
-첫 실험은 Ant와 선택한 보행 환경 하나에서 BC 정책을 평가한다. 보고할 값은 각 정책 rollout 반환의 평균과 표준편차다. $K$번의 episode 반환을 $R_1,\ldots,R_K$라 하면 $\bar R=K^{-1}\sum_kR_k$이고 표본 표준편차는 $\sqrt{\sum_k(R_k-\bar R)^2/(K-1)}$다. 한 episode만 수집해 놓고 표준편차를 보고할 수는 없다.\par
+첫 실험은 \textbf{Ant-v4}와 \textbf{Walker2d-v4·HalfCheetah-v4·Hopper-v4 중 하나}에서 BC 정책을 평가한다. Ant에서는 전문가 성과의 30\% 이상이 구현 점검용 목표다. 전문가 반환은 실행 로그의 Initial\_DataCollection\_AverageReturn에서 확인한다. 보고할 값은 각 정책 rollout 반환의 평균과 표준편차다. $K$번의 episode 반환을 $R_1,\ldots,R_K$라 하면 $\bar R=K^{-1}\sum_kR_k$이고 표본 표준편차는 $\sqrt{\sum_k(R_k-\bar R)^2/(K-1)}$다. 한 episode만 수집해 놓고 표준편차를 보고할 수는 없다.\par
 
 평가 표본 예산이 episode 길이보다 커야 여러 rollout을 얻는다. 예컨대 최대 길이가 1000단계이고 평가 예산이 5000단계이면 대략 다섯 episode를 얻는다. 표에는 환경, 전문가 성과, BC 평균±표준편차, 평가 episode 수, 훈련 데이터 양, 네트워크 크기와 업데이트 수를 함께 적으면 비교가 공정해진다.\par
 
-실행 영상을 한 장면으로 확인하는 이유는 반환 숫자가 포착하지 못하는 이상 행동을 찾기 위해서다. 로봇이 제자리에서 높은 보상을 받거나 초기 몇 단계만 걷고 넘어지는 모습을 보면 보상 함수와 종료 조건을 다시 볼 수 있다.\par
+\textbf{평가 rollout의 화면 한 장과 설명을 보고서에 넣는다.} 실행 영상을 확인하는 이유는 반환 숫자가 포착하지 못하는 이상 행동을 찾기 위해서다. 로봇이 제자리에서 높은 보상을 받거나 초기 몇 단계만 걷고 넘어지는 모습을 보면 보상 함수와 종료 조건을 다시 볼 수 있다.\par
 
 계산 예로 세 episode의 반환이 90, 100, 110이면 평균은 100이다. $s_R$을 이 반환들의 표본 표준편차라 쓰면 앞서 정의한 $K-1$ 분모의 식에서\par
 
@@ -3155,6 +3165,8 @@ s_R=\sqrt{\frac{(90-100)^2+(100-100)^2+(110-100)^2}{3-1}}=10.
 \subsubsection{4. 하이퍼파라미터 실험}
 
 하나의 요인에 대해 기본 설정을 포함한 \textbf{네 가지 이상의 값}을 비교한다. 예를 들어 시연량을 바꾸면 다른 조건인 네트워크 크기·훈련 단계·평가 episode를 고정한다. 여러 조건을 동시에 바꾸면 어느 요인이 성능 차이를 만들었는지 알기 어렵다.\par
+
+고를 수 있는 변수에는 정책 학습 gradient step 수(num\_agent\_train\_steps\_per\_iter, 기본 1000), 수집 데이터 양(batch\_size, 기본 1000), 지도학습 minibatch 크기(train\_batch\_size, 기본 100), MLP 층 수(n\_layers, 기본 2), 폭(size, 기본 64), 학습률(learning\_rate, 기본 $5\times10^{-3}$)이 있다. 예를 들어 데이터 양을 고르면 \textbf{기본값 1000을 포함한 네 값}을 같은 환경에서 시험하고, 선택 이유·각 값·평가 평균 반환을 그래프와 설명에 함께 적는다. 여기에 나열한 값은 starter 설정의 기준값이지 모든 환경에서 최적인 값은 아니다.\par
 
 가로축은 바꾼 변수, 세로축은 평가 반환의 평균으로 그리고 가능하면 표준편차나 여러 시드 결과를 표시한다. 시연량을 늘렸는데 성과가 멈춘다면 모델 용량보다 시연의 다양성이나 상태 분포 이동이 병목일 수 있다. 학습 단계를 늘렸는데 훈련 손실만 내려간다면 과적합 또는 배포 분포 차이를 의심할 수 있다.\par
 
@@ -3179,7 +3191,7 @@ BC가 만든 초기 정책으로 환경을 실행해 현재 정책이 방문한 
 
 \subsubsection{6. BC와 DAgger 비교}
 
-두 환경에서 DAgger 반복 횟수에 따른 평균 반환 곡선을 그린다. 비교 기준선으로 BC와 전문가의 성과를 함께 표시하면 분포 이동 교정의 효과를 해석하기 쉽다. DAgger가 개선되어도 전문가까지 닿지 못한다면 전문가 라벨의 부족, 현재 정책이 방문한 상태의 다양성, 정책 표현력이나 최적화 설정을 살핀다.\par
+앞서 BC를 시험한 \textbf{같은 두 환경}에서 DAgger 반복 횟수에 따른 평균 반환 곡선을 그린다. 비교 기준선으로 BC와 전문가의 성과를 함께 표시하면 분포 이동 교정의 효과를 해석하기 쉽다. DAgger가 개선되어도 전문가까지 닿지 못한다면 전문가 라벨의 부족, 현재 정책이 방문한 상태의 다양성, 정책 표현력이나 최적화 설정을 살핀다. 두 환경의 그래프에는 환경 이름, 네트워크 구조, 학습 데이터 양과 반복 수를 명시한다.\par
 
 곡선의 가로축이 반복 횟수이면 각 반복에서 추가한 데이터 양도 설명해야 한다. 반복 수가 같은 두 실험이라도 한 번에 수집한 상태가 다르면 사용한 전문가 피드백 예산이 다르기 때문이다.\par
 
@@ -3195,8 +3207,13 @@ DAgger 곡선 & 두 과업의 반복별 평균 반환 & 교정 데이터가 분�
 비교 설명 & 전문가·BC·DAgger, 데이터 예산 & 차이를 한 요인으로 과장하지 않았나? \\
 \hline\end{longtable}
 
-보고서에는 실제 실행한 설정과 결과를 쓴다. 보고서 PDF와 필요한 코드·노트북을 하나의 압축 파일로 묶고, 영상과 TensorBoard 로그는 제외한다. 제출 시에는 공지된 파일명과 용량 기준을 확인한다.\par
+보고서에는 실제 실행한 설정과 결과를 쓴다. 보고서 PDF와 필요한 코드·노트북을 하나의 압축 파일로 묶고, 영상과 TensorBoard 로그는 제외한다. 과제의 압축 파일 크기 기준은 \textbf{20 MB 미만}이다.\par
 
+\subsubsection{질문에 답을 쓸 때 구분할 것}
+
+환경 API의 반환값, BC와 DAgger의 데이터 흐름은 위의 개념과 코드에서 직접 확인할 수 있다. 반면 \textbf{두 환경의 실제 평균 반환, 네 가지 설정의 그래프, 실행 화면, DAgger의 개선 폭}은 구현과 실행에서 나온 결과여야 한다. 실험 전 예상과 실행 후 관찰을 분리하고, 점수만 보고 “DAgger가 항상 우월하다”처럼 일반화하지 않는다.\par
+
+\clearpage
 \subsection{과제 2 · 정책경사와 PPO}
 
 
@@ -3226,11 +3243,24 @@ DAgger 곡선 & 두 과업의 반복별 평균 반환 & 교정 데이터가 분�
 
 현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 \textbf{같은 초기 상태 기준 목적} $J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]$에 대한 추정량이다. 두 번째 식에 $\gamma^t$가 있는 이유는 $\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k$이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 $G_t$만 쓴다. $\gamma=1$이면 동일하지만, $\gamma<1$이면 원래 $J$의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.\par
 
+\textbf{이 과제의 할인 reward-to-go 식은 바깥 $\gamma^t$ 없이 $G_t$만 정책 항에 곱한다.} 위의 엄밀한 목적함수 미분과 과제에서 구현하는 추정량을 혼동하지 않도록 구분했다. 실제 코드를 점검할 때는 과제의 시점별 할인 $G_t$와 전체 궤적 반환 계산부터 맞춘다.\par
+
 세 단계의 보상이 $[2,-1,4]$이고 $\gamma=1$이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 $[5,3,4]$다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.\par
 
 \subsubsection{2. CartPole 비교 실험}
 
-이산 행동 CartPole에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 \textbf{각각} 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계다.\par
+이산 행동 \textbf{CartPole-v0}에서 전체 반환과 reward-to-go, advantage 정규화의 유무를 비교한다. 작은 batch와 큰 batch의 학습 곡선을 \textbf{각각} 그리면 표본량이 분산을 얼마나 줄이는지 볼 수 있다. 과제의 두 batch 설정은 1000과 4000 환경 단계이며 각각 100 iteration을 실행한다. 네 가지 설정을 두 batch에 적용하므로 총 \textbf{8개 실행}이다.\par
+
+네 비교쌍은 다음과 같다. 각 쌍의 앞은 batch 1000, 뒤는 batch 4000이다.\par
+
+\begin{enumerate}
+\item 전체 궤적 반환·정규화 없음: cartpole / cartpole\_lb.
+\item Reward-to-go·정규화 없음: cartpole\_rtg / cartpole\_lb\_rtg.
+\item 전체 궤적 반환·정규화 있음: cartpole\_na / cartpole\_lb\_na.
+\item Reward-to-go·정규화 있음: cartpole\_rtg\_na / cartpole\_lb\_rtg\_na.
+\end{enumerate}
+
+모든 실행의 공통 설정은 CartPole-v0와 100 iteration이다. 작은 batch는 1000, 큰 batch는 4000 환경 단계이며 reward-to-go는 -rtg, advantage 정규화는 -na flag로 켠다. 첫 그래프에는 작은 batch 네 곡선, 두 번째에는 큰 batch 네 곡선을 넣는다. 과제의 점검 목표는 가장 좋은 설정이 평균 반환 약 200에 도달하는 것이다. 이는 실제 결과를 대신하는 수치가 아니다.\par
 
 정규화는 한 batch의 advantage에서 평균을 빼고 표준편차로 나누는 연산이다. 값의 상대적 순서는 유지하면서 업데이트의 크기를 바꾸지만, 모든 환경에서 항상 이득이라는 보장은 없다. 비교할 때 학습률, 네트워크 구조와 평가 방법은 고정하고, 보고서에는 실제 실행한 명령 옵션을 남긴다.\par
 
@@ -3239,6 +3269,15 @@ DAgger 곡선 & 두 과업의 반복별 평균 반환 & 교정 데이터가 분�
 \par\medskip\noindent\textbf{큰 batch의 곡선이 매끄러우면 알고리즘이 더 좋은 것일까?}\quad 큰 batch는 기울기 표본 분산을 줄일 수 있지만 업데이트당 환경 비용이 더 든다. 같은 환경 단계 수에서의 최종 성과와 여러 시드의 변동을 비교해야 공정하다.\par
 
 예를 들어 1000단계 batch로 20번 업데이트한 방법은 2만 환경 단계를 썼고, 4000단계 batch로 20번 업데이트한 방법은 8만 단계를 썼다. 같은 “20번 업데이트”가 같은 데이터 예산이 아닌 셈이다. 반환 그래프의 가로축을 환경 단계로 맞춘 뒤, 곡선의 흔들림과 목표 점수 도달 시간을 함께 해석해야 한다.\par
+
+\subsubsection{CartPole의 네 질문에 답하는 법}
+
+\begin{enumerate}
+\item \textbf{정규화가 없을 때 어느 반환 추정이 나았나?} 같은 batch 안에서 전체 반환과 reward-to-go를 직접 비교한다. reward-to-go는 행동 이전 보상이라는 잡음을 없애므로 분산이 작아질 수 있지만, 실제 성능의 우열은 두 그래프가 정한다. 관찰한 도달 속도와 최종 반환을 함께 적는다.
+\item \textbf{Advantage 정규화가 도움이 되었나?} 같은 batch·같은 반환 추정에서 -na 유무만 비교한다. 정규화는 batch 평균을 빼고 표준편차로 나누어 gradient 규모를 바꾼다. 개선이 없거나 성능이 낮아져도 그 결과를 그대로 보고하고, 작은 batch의 불안정한 통계나 learning rate와의 상호작용을 논의한다.
+\item \textbf{Batch 크기가 영향을 주었나?} 동일한 반환 추정·정규화 조건에서 1000과 4000을 비교한다. 큰 batch는 표본 gradient 변동을 줄일 수 있지만 업데이트당 상호작용을 네 배 사용한다. 반드시 같은 \textbf{환경 단계 수}에서의 반환을 비교한다.
+\item \textbf{정확한 실행 명령은?} 보고서에는 실행한 8개 명령의 환경명, -n, -b, -rtg, -na, 실험명과 기본값에서 바꾼 다른 flag를 그대로 남긴다. 위 표의 실험명만 적으면 변경한 learning rate나 네트워크 설정을 재현할 수 없다.
+\end{enumerate}
 
 \subsubsection{3. 상태 가치 baseline}
 
@@ -3262,6 +3301,10 @@ E_{a\sim\pi_\theta(\cdot\mid s)}
 
 보고서에는 baseline 손실 곡선과 평가 반환 곡선을 함께 그린다. baseline gradient step 수나 학습률을 줄인 추가 실험에서는 다른 설정을 고정해야 원인을 비교할 수 있다. 손실이 내려갔다고 성과가 반드시 오르지는 않으므로 두 그래프를 나란히 해석한다.\par
 
+기본 비교는 HalfCheetah-v4, 100 iteration, batch 5000, reward-to-go, 할인율 0.95, actor 학습률 0.01을 공통으로 둔다. baseline 버전은 baseline 학습률 0.01과 매 정책 갱신당 baseline gradient step 5를 추가한다. 과제의 구현 점검 목표는 baseline 버전의 평균 반환 300 초과다.\par
+
+\textbf{추가 질문: baseline 학습 step 수 또는 학습률을 낮추면?} 가치망이 같은 rollout을 덜 학습해 baseline 손실이 느리게 감소하거나 높게 남을 수 있다. 그러면 $G_t-V_\phi(s_t)$의 오차가 커져 actor gradient가 더 흔들릴 수 있다. 그러나 지나친 baseline 갱신을 줄여 오히려 좋아지는 경우도 있으므로 두 곡선의 실제 변화와 다른 설정의 고정 여부를 근거로 답한다. baseline 손실만 낮다는 이유로 정책 성능 향상을 단정하지 않는다.\par
+
 \subsubsection{5. GAE의 계산}
 
 한 단계 TD 잔차를 $\delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t)$라고 두자. $\lambda\in[0,1]$는 긴 반환의 반영 정도, $T$는 이번 rollout이 끝나는 시점이다. $\widehat A_t$는 시점 $t$의 GAE 추정치이고 경계에서는 $\widehat A_T=0$으로 둔다. 여러 길이의 TD 잔차를 합치면\par
@@ -3279,6 +3322,10 @@ E_{a\sim\pi_\theta(\cdot\mid s)}
 \subsubsection{6. HumanoidStandup의 $\lambda$ 비교}
 
 HumanoidStandup에서는 $\lambda=0$, $0.95$, $1$을 같은 환경·네트워크·batch·학습률로 비교한다. 과제의 명시적인 과업 길이와 할인율을 유지해야 곡선의 차이를 $\lambda$에 연결할 수 있다. 한 그래프에 평가 반환과 누적 환경 단계를 표시하고, 어떤 값이 더 빨리 좋아졌으며 최종 성과와 변동이 어떠했는지 설명한다.\par
+
+실험의 공통 조건은 HumanoidStandup-v5, episode 길이 100, 할인율 0.99, 50 iteration, 3개 hidden layer, 폭 128, batch 2000, actor 학습률 0.001, reward-to-go와 baseline 사용이다. 과제의 점검 기준은 가장 좋은 실행에서 평균 점수 약 $1.15\times10^4$다.\par
+
+\textbf{$\lambda=0$과 1은 각각 무엇인가?} 0이면 $\hat A_t=\delta_t$로 한 단계 TD 오차만 쓴다. 1이면 $\hat A_t=\sum_l\gamma^l\delta_{t+l}$로 관측 가능한 긴 구간을 합치며, 완결된 episode에서는 Monte Carlo 반환에서 현재 $V$를 뺀 형태로 망원합된다. 시간 제한으로 잘렸다면 끝에서 bootstrap한 가치가 남는다. 짧은 쪽은 가치망 편향에, 긴 쪽은 반환 분산에 더 민감할 수 있다. 세 곡선의 도달 속도와 최종 점수로 이 절충을 해석한다.\par
 
 단일 실행에서 특정 $\lambda$가 더 좋아 보인다고 일반적인 우위를 주장할 수는 없다. 가치함수의 품질, 보상의 지연, 에피소드 길이에 따라 유리한 편향–분산 절충이 달라진다.\par
 
@@ -3307,7 +3354,11 @@ $\widehat A_t>0$이면 그 행동의 확률을 과도하게 높이는 이득을 
 
 Reacher 과제는 GAE와 baseline을 공통으로 쓰는 정책경사 버전과 PPO 버전을 비교한다. PPO는 같은 on-policy batch를 여러 epoch와 minibatch에 걸쳐 사용한다. 원본 설정은 PPO 4 epoch, 4 minibatch를 사용한다. 데이터를 여러 번 보되 확률비와 clipping으로 정책 변화가 지나치게 커졌을 때의 이득을 제한하려는 것이다.\par
 
+비교의 공통 조건은 Reacher-v4, episode 길이 1000, 할인율 0.99, 100 iteration, batch 5000, 학습률 0.003, advantage 정규화, reward-to-go, baseline, GAE $\lambda=0.97$이다. PPO에만 4 epoch·4 minibatch를 더한다. 과제의 점검 기준은 PPO 평균 점수가 약 -10이며 적어도 -15 수준에 도달하는 것이다. 최종 정책 두 개의 반환을 같은 환경 단계 예산에서 비교한다.\par
+
 clip 없이 단순 정책경사 손실을 같은 batch에서 여러 번 최적화하면 첫 갱신 뒤 데이터가 이미 이전 정책의 데이터가 된다. 이후 갱신은 현재 정책 분포를 반영하지 못하고 과도한 확률 변화로 불안정해질 수 있다. 실험 결과를 설명할 때 단지 PPO의 점수뿐 아니라 같은 환경 단계 수에서의 곡선과 변동을 함께 비교한다.\par
+
+\textbf{질문의 핵심은 surrogate 목적을 제거한 채 여러 batch 업데이트를 할 때의 결과와 이유}다. 첫 업데이트 뒤 현재 정책과 데이터 수집 정책이 달라졌는데도 옛 행동을 on-policy처럼 계속 가중한다. 그러면 유리해 보이는 표본 행동의 확률을 지나치게 바꿀 수 있다. 실제 실험에서 반드시 점수가 하락한다는 법칙은 아니지만, 업데이트의 불안정성과 표본 분포의 어긋남을 근거로 관찰한 결과를 설명할 수 있다.\par
 
 \subsubsection{구현 점검표}
 
@@ -3322,12 +3373,22 @@ PPO & 이전 로그확률의 고정, 비와 clip & 업데이트 중 이전 정�
 평가 & 누적 환경 단계와 여러 episode & 업데이트 횟수만 가로축으로 사용 \\
 \hline\end{longtable}
 
-보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 $\lambda$ 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 보고서 PDF와 필요한 코드를 묶어 제출하며 영상과 TensorBoard 로그는 제외한다. 파일명과 용량은 공지된 기준을 확인한다.\par
+보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 $\lambda$ 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 보고서 PDF와 필요한 코드를 묶어 제출하며 영상과 TensorBoard 로그는 제외한다. 과제의 압축 파일 크기 기준은 \textbf{20 MB 미만}이다.\par
 
+\clearpage
 \subsection{과제 3 · DQN과 Double DQN}
 
 
 과제 3은 Q-learning을 신경망으로 구현하고, CartPole의 상태 벡터와 Atari의 화면 입력에서 학습을 관찰한다. 핵심은 \textbf{온라인 Q망과 target Q망의 역할}, replay에서 뽑은 전이의 TD 목표, 탐색 정책, 그리고 Double DQN의 선택·평가 분리다. 실험 결과를 읽을 때는 예측 Q값, critic 오차와 실제 평가 반환을 함께 본다.\par
+
+\subsubsection{먼저 확인하는 DQN T/F}
+
+\begin{enumerate}
+\item \textbf{“Q-learning은 off-policy sample을 활용할 수 없어서 표본 효율이 낮다” — F.} 행동을 수집한 정책과 Bellman 목표의 greedy 정책이 달라도 transition으로 학습할 수 있다. Replay를 이용한 재사용도 가능하다.
+\item \textbf{“Actor가 없으면 연속 행동의 모든 후보 Q값을 평가해 최대 행동을 고르기 어렵다” — T.} 이산 행동의 유한 목록과 달리 연속 행동은 무한히 많아 전수 열거할 수 없다. 다만 최적화 자체가 수학적으로 불가능하다는 뜻은 아니며, DDPG 등은 actor로 최대화를 근사한다.
+\item \textbf{“같은 신경망으로 현재 Q와 목표 Q를 모두 만들면 moving target 문제가 생기므로, 안쪽 학습 반복에서는 고정된 target network를 쓸 수 있다” — T.} 온라인 망을 갱신하는 동안 target 망을 한동안 고정해 회귀 목표의 급격한 변화를 늦춘다.
+\item \textbf{“학습이 진행될수록 보통 $\epsilon$을 키워 탐색을 늘린다” — F.} 대개 초기에 크게 탐색하고 이후 $\epsilon$을 낮춰 학습한 행동을 더 많이 활용한다.
+\end{enumerate}
 
 \subsubsection{1. DQN의 한 번의 업데이트}
 
@@ -3344,6 +3405,18 @@ $\mathcal D$는 replay buffer의 전이 분포다. 계산한 $y_t$는 현재 온
 
 \textbf{시간 제한으로 잘린 trajectory}는 실제 MDP 종료와 다르다. 환경을 reset하더라도 TD 목표에는 다음 상태에서의 가치가 남아야 하므로 bootstrap용 $d_t$는 0으로 저장한다. 반대로 실패나 과업 완료처럼 실제로 종료했다면 $d_t=1$이다. 두 경우를 모두 단순한 “episode 끝”으로 합치면 시간 제한 근처의 Q값을 낮게 왜곡할 수 있다.\par
 
+구현할 함수의 연결은 다음과 같다.\par
+
+\begin{enumerate}
+\item \textbf{DQNAgent.update\_critic:} replay minibatch의 TD target과 critic 손실을 계산하고 최적화한다. 현재 $Q_\theta(s,a)$에서 실제 실행 행동 $a$의 값만 모으고, 목표에는 gradient를 흘리지 않는다.
+\item \textbf{DQNAgent.update:} critic을 학습하고 조건에 맞춰 target critic을 갱신한다. 매 minibatch마다 무조건 target을 복사하면 고정 목표의 장점이 줄어든다.
+\item \textbf{DQNAgent.get\_action:} 이산 행동에서 $\epsilon$-greedy를 구현한다. 무작위 행동과 greedy 행동의 확률, 평가 때의 탐색 설정을 구분한다.
+\item \textbf{run\_hw3.py의 학습 반복:} 수집, replay 삽입, 학습, 평가, 로그를 연결한다. 환경 단계와 gradient step은 별개로 센다.
+\item \textbf{utils.py의 sample\_trajectory:} 상태·행동·보상·다음 상태·종료 정보를 같은 시점에 저장한다. terminated와 truncated를 구분해 bootstrap용 done을 저장한다.
+\end{enumerate}
+
+CartPole의 설정은 dqn\_basic\_config.py, Atari Asterix의 설정은 dqn\_atari\_config.py에서 만든다. replay\_buffer.py의 MemoryEfficientReplayBuffer는 화면 stack을 매 transition마다 통째로 복제하지 않고 frame을 효율적으로 저장한다. 새 episode 첫 관측을 넣는 on\_reset과 뒤따르는 frame을 넣는 insert의 호출 시점을 살펴야 stack이 episode 경계를 넘어 섞이지 않는다.\par
+
 \subsubsection{2. Replay, target 망과 탐색}
 
 연속해서 수집한 transition은 유사하다. replay buffer에서 무작위 minibatch를 뽑으면 샘플 상관을 줄이고 과거 경험을 재사용한다. 온라인 망을 매 단계 갱신하되 target 망을 주기적으로 복사하거나 소프트 갱신하면 회귀 목표가 온라인 망을 즉시 따라 움직이지 않는다. 두 장치는 서로 다른 불안정성을 해결한다.\par
@@ -3351,6 +3424,8 @@ $\mathcal D$는 replay buffer의 전이 분포다. 계산한 $y_t$는 현재 온
 행동을 고를 때 $\epsilon$-greedy는 확률 $\epsilon$로 무작위 행동을, 나머지 확률로 $\arg\max_a Q_\theta(s,a)$를 선택한다. 행동이 $m$개라면 greedy 행동도 무작위 탐색에 포함되므로 그 행동의 전체 선택확률은 $1-\epsilon+\epsilon/m$이다. 학습 초반에는 $\epsilon$을 크게 두어 다양한 전이를 수집하고, 뒤로 갈수록 낮춰 학습한 행동을 더 자주 사용한다. 평가할 때의 탐색 설정은 학습 중의 설정과 구별해 명시한다.\par
 
 Atari 화면에서는 한 프레임이 이동 방향을 알려주지 않을 수 있다. grayscale 변환은 색 차원을 줄이고, frame skip은 몇 단계 동안 같은 행동을 유지하며, frame stack은 연속 프레임을 묶어 시간 정보를 일부 되살린다. 화면 입력과 CartPole의 낮은 차원 상태 벡터는 네트워크 입력층이 다르지만 TD 목표의 수학은 같다.\par
+
+Atari 설정은 $84\times84\times3$ RGB를 $84\times84$ grayscale로 바꾸고, 같은 행동을 4 frame 유지하는 frame skip과 최근 4 frame을 쌓는 frame stack을 사용한다. 스타터 구현에는 이와 함께 학습률 감소 schedule과 gradient norm clipping도 들어 있다. Clipping은 gradient norm이 임계값을 넘을 때 전체 gradient를 같은 방향으로 축소한다. 이런 장치는 알고리즘의 Bellman 목표와 별도로 \textbf{최적화의 안정성}을 위한 것이다.\par
 
 \subsubsection{3. Double DQN의 선택·평가 분리}
 
@@ -3365,14 +3440,44 @@ y_t^{\rm Double}=r_t+\gamma(1-d_t)Q_{\bar\theta}(s_{t+1},a^*).
 
 선택과 평가에 쓰인 오차의 결합을 약하게 해 과대평가를 완화한다. 두 망이 학습 과정에서 관련되어 있으므로 편향을 완전히 없앤다는 뜻은 아니다. DQN target이 target 망에서 \textbf{최대 행동 선택과 값 평가를 모두 한다}는 점과 대조하면 식을 기억하기 쉽다.\par
 
+\subsubsection{Toy 실험의 두 질문}
+
+Toy 환경은 상태 하나와 행동 $m$개를 가진 한 단계 문제다. 모든 행동의 실제 기대 보상은 $\mu=0$이고 관측 보상은 $r\sim\mathcal N(0,1)$이다. 따라서 실제 $Q(s,a)$는 모든 $a$에서 0이다. 그런데 각 행동의 noisy 추정치를 독립인 $X_1,\ldots,X_m$이라 하면, 하나만 골라 평가하는 값의 기댓값은 0이어도 $\mathbb E[\max_i X_i]>0$이다. $m$이 커질수록 양의 잡음 중 더 큰 것이 선택될 기회가 늘어난다. 표준정규 잡음의 이상화에서는 최댓값의 대표적인 크기가 큰 $m$에 대해 대략 $\sqrt{2\log m}$로 자란다.\par
+
+Double 추정의 직관은 \textbf{한 추정치로 선택하고 독립적인 다른 추정치로 평가}하는 데 있다. 두 번째 추정치를 $Y_i$라 하고 $I=\arg\max_iX_i$라 하면, 각 $Y_i$가 평균 0이고 선택에 쓰인 $X$들과 독립인 이상화에서\par
+
+\[
+\mathbb E[Y_I]
+=\sum_{i=1}^{m}P(I=i)\mathbb E[Y_i\mid I=i]
+=\sum_{i=1}^{m}P(I=i)\cdot0=0.
+\]
+
+실습에서는 $m=2,4,8,\ldots,1024$로 늘리며 \textbf{single-Q와 double-Q의 추정 오차를 같은 그래프에서 비교}한다. 실제 Double DQN의 두 망은 완전히 독립이지 않으므로 toy의 0 기대 오차를 그대로 보장하지는 않는다. 그래프에서 행동 수에 따른 오차 추세와 두 추정의 차이를 설명하면 된다.\par
+
 \subsubsection{4. 실험 결과를 해석하는 순서}
 
-CartPole에서는 DQN의 평가 반환을 여러 시드의 평균과 표준편차로 그린다. 세로축은 평가 반환, 가로축은 환경 상호작용 단계 수로 맞춘다. 학습률을 크게 바꾸는 실험에서는 예측 Q값, critic error, 평가 반환 세 곡선을 함께 비교한다. 예측 Q가 커져도 실제 반환이 좋아졌다는 증거는 아니다. 지나친 학습률은 움직이는 bootstrap 목표와 함수 근사의 오차를 증폭할 수 있다.\par
+CartPole-v1에서는 DQN을 \textbf{seed 1·2·3}으로 실행해 평가 반환을 세 시드의 평균과 표준편차로 그린다. 세로축은 eval\_return, 가로축은 학습 환경 단계 수로 맞춘다. 원래 설정의 점검 목표는 약 30만 단계 부근에 반환 500에 가까워지는 것이다. 이는 관찰 결과를 대신하지 않는다.\par
 
-Double Q의 toy 실험은 동일한 기대 보상을 가진 행동 수를 늘릴 때 단일 최대 추정의 오차가 어떻게 변하는지 확인한다. Atari Asterix에서는 Double DQN을 여러 시드로 학습하고, 하나의 최고 점수뿐 아니라 전체 평가 곡선과 변동을 보고한다. 또한 한 hyperparameter를 여러 값으로 바꿀 때는 나머지 실험 설정과 평가 방식을 고정해야 원인을 비교할 수 있다.\par
+학습률 비교에서는 기본 \textbf{0.001}과 변경 설정 \textbf{0.05}를 CartPole-v1에서 비교한다. 예측 Q값, critic error, 평가 반환의 \textbf{세 그래프}를 각각 두 학습률의 곡선으로 그린다. 예측 Q가 커져도 실제 반환이 좋아졌다는 증거는 아니다. 지나친 학습률은 움직이는 bootstrap 목표와 함수 근사의 오차를 증폭할 수 있다. 설명할 때는 “학습률을 키우면 무조건 발산한다”라고 쓰기보다 실제 세 곡선의 시간 순서를 근거로 원인을 분석한다.\par
+
+Atari \textbf{Asterix-v5}에서는 Double DQN을 seed 1·2·3으로 학습한다. 세 시드의 평가 반환 평균과 표준편차를 단계 수에 대해 그린다. 과제의 점검 목표는 각 실행에서 평가 반환이 학습 중 한 번 이상 1200을 넘는 것이다. 일시적인 최고점과 전체 학습 곡선의 수준을 구분한다.\par
+
+마지막 CartPole hyperparameter 실험은 하나의 변수를 골라 \textbf{기본값을 포함한 네 값}을 같은 그래프에서 비교한다. learning rate, network architecture, exploration schedule 등이 후보이며 네 설정 파일과 변수 선택 이유를 남긴다. 다른 변수와 평가 방식을 고정해야 네 곡선의 차이를 고른 변수와 연결할 수 있다.\par
+
+보고서의 결과물은 다음 다섯 묶음으로 확인한다.\par
+
+\begin{enumerate}
+\item \textbf{CartPole DQN:} 세 seed의 평가 반환 평균·표준편차와 환경 단계 x축.
+\item \textbf{Learning rate 비교:} Q 예측, critic error, 평가 반환의 세 그래프에서 각각 0.001과 0.05를 비교.
+\item \textbf{Double Q toy:} 행동 수가 2에서 1024로 커질 때 single·double 추정 오차의 막대그래프.
+\item \textbf{Asterix Double DQN:} 세 seed의 평균·표준편차 곡선과 각 실행의 최고점.
+\item \textbf{Hyperparameter:} 기본값 포함 네 값의 평가 반환 곡선, 동일 환경·평가 조건과 변수 선택 이유.
+\end{enumerate}
 
 \par\medskip\noindent\textbf{Q값이 높아지는데 실제 성적이 나빠질 수 있나?}\quad 그렇다. Q는 bootstrap으로 학습된 예측이고 평가 반환은 실제 환경에서 관찰한 결과다. max 연산의 선택 편향, 큰 학습률이나 드문 상태의 추정 오류는 예측만 높일 수 있다. 두 지표의 간격 자체가 중요한 진단 신호다.\par
 
 \par\medskip\noindent\textbf{왜 Double DQN에서도 target network가 필요한가?}\quad Double DQN의 target 망은 값 평가를 맡고, 온라인 망은 다음 행동을 고른다. target 망은 원래 DQN에서처럼 목표의 급격한 이동을 늦추는 역할도 계속한다. 선택·평가 분리와 목표 안정화가 동시에 작동한다.\par
+
+실험 결과의 숫자와 그래프는 실제 실행에서 얻은 것을 사용한다. 개념 설명만으로는 seed별 성과, 큰 학습률의 실제 발산 여부나 네 hyperparameter 설정의 우열을 확정할 수 없다. 보고서 PDF와 코드를 한 압축 파일에 넣고, 영상과 로그는 제외한다. 과제의 압축 파일 크기 기준은 \textbf{20 MB 미만}이다.\par
 
 \end{document}
