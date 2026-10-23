@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { sets } from '../content/midterm/questions.mjs';
+import { groups } from '../content/midterm/models.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const docs = path.join(root, 'docs');
@@ -23,7 +25,7 @@ for (const file of files) {
     fail('Unexpected public PDF: ' + file);
 }
 const htmlFiles = files.filter(file => file.endsWith('.html'));
-if (htmlFiles.length !== manifest.length + assignments.length + 1)
+if (htmlFiles.length !== manifest.length + assignments.length + 3)
   fail('Unexpected HTML page count: ' + htmlFiles.length);
 let slides = 0;
 for (const chapter of manifest) {
@@ -51,6 +53,46 @@ for (const assignment of assignments) {
       fail('Missing assignment slide link: ' + ref);
   }
 }
+const midtermChapters = manifest.filter(chapter => !chapter.id.startsWith('07-'));
+if (sets.length !== 3) fail('Expected three midterm sets');
+for (const set of sets) {
+  if (set.tf.length !== 25 || set.mc.length !== 4 || set.short.length !== 29)
+    fail('Wrong 58-question exam format: ' + set.id);
+  const questions = [...set.tf, ...set.mc, ...set.short];
+  const coveredChapters = new Set();
+  const coveredHomework = new Set();
+  for (const question of questions) {
+    const [chapterId, slideNo] = question.slide.split(':');
+    const chapter = midtermChapters.find(item => item.id === chapterId);
+    if (!chapter || !Number.isInteger(Number(slideNo)) || Number(slideNo) < 1 ||
+      Number(slideNo) > chapter.pages) fail('Question outside midterm lecture scope: ' + question.slide);
+    coveredChapters.add(chapterId);
+    if (question.homework) {
+      if (!assignments.some(item => item.id === question.homework)) fail('Unknown HW: ' + question.homework);
+      coveredHomework.add(question.homework);
+    }
+    if (!question.prompt || !question.explanation) fail('Missing prompt/explanation in ' + set.id);
+    if (question.type === 'tf' && typeof question.answer !== 'boolean') fail('Bad T/F answer in ' + set.id);
+    if (question.type === 'mc' &&
+      (question.choices.length !== 4 || !Number.isInteger(question.answer) ||
+       question.answer < 0 || question.answer > 3)) fail('Bad multiple choice in ' + set.id);
+    if (question.type === 'short' && !question.answer) fail('Missing short answer in ' + set.id);
+  }
+  for (const chapter of midtermChapters) if (!coveredChapters.has(chapter.id))
+    fail('Missing lecture in set ' + set.id + ': ' + chapter.id);
+  for (const id of ['hw1','hw2','hw3']) if (!coveredHomework.has(id))
+    fail('Missing homework in set ' + set.id + ': ' + id);
+}
+const practice = fs.readFileSync(path.join(docs, 'midterm/index.html'), 'utf8');
+if ([...practice.matchAll(/class="question-card"/g)].length !== sets.length * 58 ||
+  !practice.includes('T/F 25') || !practice.includes('객관식 4') ||
+  !practice.includes('단답형 29')) fail('Midterm practice page missing questions/format');
+const home = fs.readFileSync(path.join(docs, 'index.html'), 'utf8');
+if (!home.includes('href="midterm/index.html"') || !home.includes('href="midterm/models.html"'))
+  fail('Midterm pages missing from home');
+const models = fs.readFileSync(path.join(docs, 'midterm/models.html'), 'utf8');
+if ([...models.matchAll(/class="model-group"/g)].length !== groups.length ||
+  !models.includes('Double DQN') || !models.includes('IQL')) fail('Model comparison incomplete');
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, 'utf8');
   if (!html.includes('Deep Reinforcement Learning')) fail('Wrong site title: ' + file);
@@ -71,4 +113,5 @@ const pdf = path.join(docs, 'study-guide.pdf');
 if (!fs.existsSync(pdf) || fs.statSync(pdf).size < 100000) fail('Missing compiled PDF');
 const expectedSlides = manifest.reduce((total, chapter) => total + chapter.pages, 0);
 if (slides !== expectedSlides) fail('Slide total mismatch: ' + slides + ' expected ' + expectedSlides);
-console.log('Checked ' + slides + ' slides, ' + assignments.length + ' assignments, ' + htmlFiles.length + ' pages and local links.');
+console.log('Checked ' + slides + ' slides, ' + assignments.length + ' assignments, ' + htmlFiles.length +
+  ' pages, ' + (sets.length * 58) + ' midterm questions, lecture/HW coverage and local links.');

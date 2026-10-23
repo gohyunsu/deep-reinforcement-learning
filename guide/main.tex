@@ -3324,4 +3324,55 @@ PPO & 이전 로그확률의 고정, 비와 clip & 업데이트 중 이전 정�
 
 보고서에는 CartPole의 두 batch 그래프, HalfCheetah의 baseline 손실과 반환, HumanoidStandup의 $\lambda$ 비교, Reacher의 PPO 비교와 각 질문의 해석을 담는다. 직접 실행한 명령과 설정을 기록하고, 실제 결과를 사용한다. 보고서 PDF와 필요한 코드를 묶어 제출하며 영상과 TensorBoard 로그는 제외한다. 파일명과 용량은 공지된 기준을 확인한다.\par
 
+\subsection{과제 3 · DQN과 Double DQN}
+
+
+과제 3은 Q-learning을 신경망으로 구현하고, CartPole의 상태 벡터와 Atari의 화면 입력에서 학습을 관찰한다. 핵심은 \textbf{온라인 Q망과 target Q망의 역할}, replay에서 뽑은 전이의 TD 목표, 탐색 정책, 그리고 Double DQN의 선택·평가 분리다. 실험 결과를 읽을 때는 예측 Q값, critic 오차와 실제 평가 반환을 함께 본다.\par
+
+\subsubsection{1. DQN의 한 번의 업데이트}
+
+전이 $(s_t,a_t,r_t,s_{t+1},d_t)$에서 $s_t$는 현재 상태, $a_t$는 행동, $r_t$는 즉시 보상, $s_{t+1}$은 다음 상태, $d_t\in\{0,1\}$은 \textbf{환경의 실제 종료} 표시다. 온라인 Q망의 매개변수를 $\theta$, 느리게 갱신되는 target 망의 매개변수를 $\bar\theta$, 할인율을 $\gamma$라 두자. 이산 행동에서 DQN의 목표와 제곱 TD 손실은\par
+
+\[
+y_t=r_t+\gamma(1-d_t)\max_{a'}Q_{\bar\theta}(s_{t+1},a'),
+\qquad
+L(\theta)=\mathbb E_{(s,a,r,s',d)\sim\mathcal D}
+\bigl[(Q_\theta(s,a)-y_t)^2\bigr].
+\]
+
+$\mathcal D$는 replay buffer의 전이 분포다. 계산한 $y_t$는 현재 온라인 망의 gradient가 흘러들지 않도록 고정된 target으로 취급한다. 실제로 종료한 상태라면 $d_t=1$이므로 다음 상태의 가치는 더하지 않는다. 예를 들어 $r_t=2$, $\gamma=0.9$, 다음 상태의 최대 target Q가 4라면 비종료 전이의 목표는 $5.6$이고, 종료 전이의 목표는 $2$다.\par
+
+\textbf{시간 제한으로 잘린 trajectory}는 실제 MDP 종료와 다르다. 환경을 reset하더라도 TD 목표에는 다음 상태에서의 가치가 남아야 하므로 bootstrap용 $d_t$는 0으로 저장한다. 반대로 실패나 과업 완료처럼 실제로 종료했다면 $d_t=1$이다. 두 경우를 모두 단순한 “episode 끝”으로 합치면 시간 제한 근처의 Q값을 낮게 왜곡할 수 있다.\par
+
+\subsubsection{2. Replay, target 망과 탐색}
+
+연속해서 수집한 transition은 유사하다. replay buffer에서 무작위 minibatch를 뽑으면 샘플 상관을 줄이고 과거 경험을 재사용한다. 온라인 망을 매 단계 갱신하되 target 망을 주기적으로 복사하거나 소프트 갱신하면 회귀 목표가 온라인 망을 즉시 따라 움직이지 않는다. 두 장치는 서로 다른 불안정성을 해결한다.\par
+
+행동을 고를 때 $\epsilon$-greedy는 확률 $\epsilon$로 무작위 행동을, 나머지 확률로 $\arg\max_a Q_\theta(s,a)$를 선택한다. 행동이 $m$개라면 greedy 행동도 무작위 탐색에 포함되므로 그 행동의 전체 선택확률은 $1-\epsilon+\epsilon/m$이다. 학습 초반에는 $\epsilon$을 크게 두어 다양한 전이를 수집하고, 뒤로 갈수록 낮춰 학습한 행동을 더 자주 사용한다. 평가할 때의 탐색 설정은 학습 중의 설정과 구별해 명시한다.\par
+
+Atari 화면에서는 한 프레임이 이동 방향을 알려주지 않을 수 있다. grayscale 변환은 색 차원을 줄이고, frame skip은 몇 단계 동안 같은 행동을 유지하며, frame stack은 연속 프레임을 묶어 시간 정보를 일부 되살린다. 화면 입력과 CartPole의 낮은 차원 상태 벡터는 네트워크 입력층이 다르지만 TD 목표의 수학은 같다.\par
+
+\subsubsection{3. Double DQN의 선택·평가 분리}
+
+Q 추정에 잡음이 있을 때 $\max_a \hat Q(s',a)$는 우연히 크게 나온 행동을 고른다. 모든 행동의 참값이 0인 one-step 문제에서도 추정치들의 최댓값의 기댓값은 보통 0보다 크다. 행동 후보가 많아지면 큰 양의 잡음이 선택될 기회도 늘어난다.\par
+
+Double DQN은 다음 행동을 온라인 망으로 고르고 그 행동을 target 망으로 평가한다.\par
+
+\[
+a^*=\arg\max_{a'}Q_\theta(s_{t+1},a'),\qquad
+y_t^{\rm Double}=r_t+\gamma(1-d_t)Q_{\bar\theta}(s_{t+1},a^*).
+\]
+
+선택과 평가에 쓰인 오차의 결합을 약하게 해 과대평가를 완화한다. 두 망이 학습 과정에서 관련되어 있으므로 편향을 완전히 없앤다는 뜻은 아니다. DQN target이 target 망에서 \textbf{최대 행동 선택과 값 평가를 모두 한다}는 점과 대조하면 식을 기억하기 쉽다.\par
+
+\subsubsection{4. 실험 결과를 해석하는 순서}
+
+CartPole에서는 DQN의 평가 반환을 여러 시드의 평균과 표준편차로 그린다. 세로축은 평가 반환, 가로축은 환경 상호작용 단계 수로 맞춘다. 학습률을 크게 바꾸는 실험에서는 예측 Q값, critic error, 평가 반환 세 곡선을 함께 비교한다. 예측 Q가 커져도 실제 반환이 좋아졌다는 증거는 아니다. 지나친 학습률은 움직이는 bootstrap 목표와 함수 근사의 오차를 증폭할 수 있다.\par
+
+Double Q의 toy 실험은 동일한 기대 보상을 가진 행동 수를 늘릴 때 단일 최대 추정의 오차가 어떻게 변하는지 확인한다. Atari Asterix에서는 Double DQN을 여러 시드로 학습하고, 하나의 최고 점수뿐 아니라 전체 평가 곡선과 변동을 보고한다. 또한 한 hyperparameter를 여러 값으로 바꿀 때는 나머지 실험 설정과 평가 방식을 고정해야 원인을 비교할 수 있다.\par
+
+\par\medskip\noindent\textbf{Q값이 높아지는데 실제 성적이 나빠질 수 있나?}\quad 그렇다. Q는 bootstrap으로 학습된 예측이고 평가 반환은 실제 환경에서 관찰한 결과다. max 연산의 선택 편향, 큰 학습률이나 드문 상태의 추정 오류는 예측만 높일 수 있다. 두 지표의 간격 자체가 중요한 진단 신호다.\par
+
+\par\medskip\noindent\textbf{왜 Double DQN에서도 target network가 필요한가?}\quad Double DQN의 target 망은 값 평가를 맡고, 온라인 망은 다음 행동을 고른다. target 망은 원래 DQN에서처럼 목표의 급격한 이동을 늦추는 역할도 계속한다. 선택·평가 분리와 목표 안정화가 동시에 작동한다.\par
+
 \end{document}

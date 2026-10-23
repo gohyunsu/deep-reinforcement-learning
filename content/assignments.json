@@ -12,5 +12,12 @@
     "short": "reward-to-go, baseline, GAE, PPO-Clip",
     "file": "hw2.md",
     "slides": ["02-2:11", "02-2:12", "02-2:19", "03-1:10", "03-1:24", "03-2:09", "03-2:16"]
+  },
+  {
+    "id": "hw3",
+    "title": "과제 3 · DQN과 Double DQN",
+    "short": "replay, target network, ε-greedy, Atari 평가",
+    "file": "hw3.md",
+    "slides": ["04-1:10", "04-1:13", "04-1:16", "04-1:18", "04-1:19", "04-1:27", "04-1:29"]
   }
 ]
