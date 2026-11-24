@@ -6,10 +6,4 @@
 /__pycache__/
 **/__pycache__/
 /.research/
-/guide/*.aux
-/guide/*.log
-/guide/*.out
-/guide/*.toc
-/guide/*.pdf
-/guide/*.synctex.gz
 /.DS_Store

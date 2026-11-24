@@ -30,9 +30,7 @@
 
 - content/: 슬라이드별 본문, 장 목록, 과제 가이드, 중간고사 문항과 모델 비교 자료
 - docs/: 정적 사이트와 개별 슬라이드 이미지
-- guide/main.tex: 사이트 본문과 같은 내용으로 생성한 LaTeX 문서
 - tools/build.mjs: 사이트 생성
-- tools/build_tex.py: LaTeX 문서 생성
 - tools/check.mjs: 이미지·페이지·내부 링크와 시험 문항 수·범위 검증
 
-GitHub Actions는 사이트를 생성하고 PDF와 함께 GitHub Pages에 게시합니다. 로컬에서 사이트를 생성할 때는 Node.js 24 이상에서 npm install과 npm run build를 실행합니다. PDF는 Python 3으로 tools/build_tex.py를 실행한 뒤 XeLaTeX로 guide/main.tex를 두 차례 컴파일합니다.
+GitHub Actions는 사이트를 생성해 GitHub Pages에 게시합니다. 로컬에서 사이트를 생성할 때는 Node.js 24 이상에서 `npm install`과 `npm run build`를 실행합니다.

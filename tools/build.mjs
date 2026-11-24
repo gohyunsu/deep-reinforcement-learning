@@ -101,7 +101,6 @@ function shell(pageTitle, body, prefix) {
     '<body data-prefix="' + prefix + '"><div class="reading-progress" aria-hidden="true"></div>' +
     '<header class="site-header"><a class="brand" href="' + prefix + 'index.html"><span class="brand-mark">π</span>' +
     '<span class="brand-title">' + title + '</span></a>' +
-    '<a class="pdf-link" href="' + prefix + 'study-guide.pdf" download>PDF 가이드 ↓</a>' +
     '<button type="button" class="search-trigger" data-search-trigger aria-label="전체 검색 열기"><span>⌕</span> 검색 <kbd>/</kbd></button></header>' +
     body +
     '<dialog id="slide-dialog" class="slide-dialog"><button type="button" class="dialog-close" data-dialog-close aria-label="이미지 닫기">×</button><img alt="확대한 슬라이드"><p></p></dialog>' +
@@ -128,7 +127,6 @@ function writeIndex() {
     '<h1>상태와 행동에서<br><em>정책 학습의 직관</em>까지</h1>' +
     '<p>순차 의사결정에서 모방학습, 정책경사, 가치학습, 보상학습, 계층적 RL과 실제 로봇 전이까지. 슬라이드 한 장씩 원리와 수식을 따라가며 연구 사례로 연결한다.</p>' +
     '<div class="hero-actions"><a class="primary-button" href="lecture/01-1.html">처음부터 읽기 <span>→</span></a>' +
-    '<a class="pdf-link" href="study-guide.pdf" download>PDF 내려받기 ↓</a>' +
     '<span>' + chapters.length + '개 장 · ' + slideCount + '개 슬라이드</span></div><div class="hero-formula">\\[\\pi^*=\\arg\\max_\\pi\\;\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{\\infty}\\gamma^t r_t\\right]\\]</div></section>' +
     '<section class="learning-path"><div class="section-kicker">학습 경로</div><h2>개념에서 알고리즘으로</h2>' +
     '<div class="path-line"><span>순차 결정</span><b>→</b><span>모방학습</span><b>→</b><span>정책경사</span><b>→</b><span>가치학습</span><b>→</b><span>Model-based RL</span><b>→</b><span>보상학습</span><b>→</b><span>Skill·HRL</span><b>→</b><span>Sim-to-real</span></div>' +

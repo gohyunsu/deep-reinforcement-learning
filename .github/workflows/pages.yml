@@ -1,4 +1,4 @@
-name: Build and publish study guide
+name: Build and publish site
 
 on:
   push:

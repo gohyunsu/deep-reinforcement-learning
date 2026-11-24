@@ -17,12 +17,10 @@ function walk(folder) {
   }
 }
 walk(docs);
-const allowed = new Set(['.html', '.css', '.js', '.svg', '.webp', '.pdf', '']);
+const allowed = new Set(['.html', '.css', '.js', '.svg', '.webp', '']);
 for (const file of files) {
   const ext = path.extname(file).toLowerCase();
   if (!allowed.has(ext)) fail('Unexpected public file: ' + file);
-  if (ext === '.pdf' && path.relative(docs, file).replaceAll('\\', '/') !== 'study-guide.pdf')
-    fail('Unexpected public PDF: ' + file);
 }
 const htmlFiles = files.filter(file => file.endsWith('.html'));
 if (htmlFiles.length !== manifest.length + assignments.length + 3)
@@ -118,8 +116,6 @@ for (const file of htmlFiles) {
     }
   }
 }
-const pdf = path.join(docs, 'study-guide.pdf');
-if (!fs.existsSync(pdf) || fs.statSync(pdf).size < 100000) fail('Missing compiled PDF');
 const expectedSlides = manifest.reduce((total, chapter) => total + chapter.pages, 0);
 if (slides !== expectedSlides) fail('Slide total mismatch: ' + slides + ' expected ' + expectedSlides);
 console.log('Checked ' + slides + ' slides, ' + assignments.length + ' assignments, ' + htmlFiles.length +
