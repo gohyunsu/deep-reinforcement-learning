@@ -19,5 +19,26 @@
     "short": "replay, target network, ε-greedy, Atari 평가",
     "file": "hw3.md",
     "slides": ["04-1:10", "04-1:13", "04-1:16", "04-1:18", "04-1:19", "04-1:27", "04-1:29"]
+  },
+  {
+    "id": "hw4",
+    "title": "과제 4 · Soft Actor-Critic",
+    "short": "연속 행동, 엔트로피, actor gradient와 두 critic",
+    "file": "hw4.md",
+    "slides": ["05-1:13", "05-1:15", "05-1:16", "05-1:21", "05-1:28", "05-1:30", "05-1:31"]
+  },
+  {
+    "id": "hw5",
+    "title": "과제 5 · Offline RL과 CQL",
+    "short": "고정 데이터, 보수적 Q와 데이터 coverage",
+    "file": "hw5.md",
+    "slides": ["06:06", "06:08", "06:15", "06:16", "06:17", "06:18", "06:21"]
+  },
+  {
+    "id": "hw6",
+    "title": "과제 6 · Dynamics model과 MPC",
+    "short": "정규화된 전이 모델, random shooting과 CEM",
+    "file": "hw6.md",
+    "slides": ["07-1:12", "07-1:14", "07-1:17", "07-1:18", "07-1:19", "07-1:22"]
   }
 ]

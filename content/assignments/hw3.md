@@ -22,7 +22,7 @@ $$
 
 $\mathcal D$는 replay buffer의 전이 분포다. 계산한 $y_t$는 현재 온라인 망의 gradient가 흘러들지 않도록 고정된 target으로 취급한다. 실제로 종료한 상태라면 $d_t=1$이므로 다음 상태의 가치는 더하지 않는다. 예를 들어 $r_t=2$, $\gamma=0.9$, 다음 상태의 최대 target Q가 4라면 비종료 전이의 목표는 $5.6$이고, 종료 전이의 목표는 $2$다.
 
-**시간 제한으로 잘린 trajectory**는 실제 MDP 종료와 다르다. 환경을 reset하더라도 TD 목표에는 다음 상태에서의 가치가 남아야 하므로 bootstrap용 $d_t$는 0으로 저장한다. 반대로 실패나 과업 완료처럼 실제로 종료했다면 $d_t=1$이다. 두 경우를 모두 단순한 “episode 끝”으로 합치면 시간 제한 근처의 Q값을 낮게 왜곡할 수 있다.
+**시간 제한으로 잘린 trajectory**는 실제 MDP 종료와 다르다. 환경을 reset하더라도 이론적인 TD 목표의 bootstrap 마스크는 $d_t=0$이고, 실제 종료라면 $d_t=1$이다. 다만 이 과제의 `run_hw3.py` 스타터는 `truncated` 전이를 replay에 **넣지 않고** reset한다. 따라서 이 코드에서는 잘린 마지막 전이에 대해 목표 자체를 계산하지 않는다. 평가용 `sample_trajectory`는 `terminated or truncated`로 rollout을 멈추되 `terminal` 배열에는 `terminated`를 기록한다. 수집 종료와 TD 종료를 혼동하지 말자.
 
 구현할 함수의 연결은 다음과 같다.
 
@@ -33,6 +33,46 @@ $\mathcal D$는 replay buffer의 전이 분포다. 계산한 $y_t$는 현재 온
 5. **utils.py의 sample_trajectory:** 상태·행동·보상·다음 상태·종료 정보를 같은 시점에 저장한다. terminated와 truncated를 구분해 bootstrap용 done을 저장한다.
 
 CartPole의 설정은 dqn_basic_config.py, Atari Asterix의 설정은 dqn_atari_config.py에서 만든다. replay_buffer.py의 MemoryEfficientReplayBuffer는 화면 stack을 매 transition마다 통째로 복제하지 않고 frame을 효율적으로 저장한다. 새 episode 첫 관측을 넣는 on_reset과 뒤따르는 frame을 넣는 insert의 호출 시점을 살펴야 stack이 episode 경계를 넘어 섞이지 않는다.
+
+### 손코딩 지도: 한 batch의 TD 업데이트
+
+`run_hw3.py`의 순서는 행동 선택, 한 단계 진행, replay 삽입, `learning_starts` 이후의 표본 추출과 갱신이다. CartPole에서는 현재·다음 관측 전체를 버퍼에 넣는다. Atari에서는 reset 때 첫 frame을 `on_reset`으로 알리고, 이후 `insert`에는 다음 관측의 마지막 frame만 준다. 평가용 `sample_trajectory`는 탐색률 0으로 별도 rollout을 만든다.
+
+`DQNAgent.update_critic`에서 `[B,m]`인 Q 출력 중 **실행한 행동**만 `gather`해 `[B]`를 만든다. 다음 상태의 행동 선택은 일반 DQN이면 target 망, Double DQN이면 online 망이다. 선택된 행동의 값은 두 경우 모두 target 망에서 읽는다. 아래에서 `done`은 실제 종료 마스크다.
+
+```python
+with torch.no_grad():
+    target_all = target_critic(next_obs)       # [B, m]
+    selector = critic(next_obs) if double_q else target_all
+    next_action = selector.argmax(dim=1)       # [B]
+    next_q = target_all.gather(1, next_action[:, None])[:, 0]
+    y = reward + gamma * (1 - done) * next_q   # [B]
+q = critic(obs).gather(1, action.long()[:, None])[:, 0]
+loss = mse(q, y)
+```
+
+`update`는 critic 한 번을 갱신하고 `step % target_update_period == 0`인 시점에 target 망을 복사한다. `get_action`은 확률 $\epsilon$의 무작위 선택과 greedy 선택을 나누며, 반환값은 환경에 넣을 **정수 행동 하나**다. Toy 실험의 `q_learning_value`는 `Q[argmax(Q)]`, `double_q_learning_value`는 `Q_prime[argmax(Q)]`다. 둘을 같은 배열로 읽으면 Double Q의 선택·평가 분리 실험이 사라진다.
+
+함수 단위로 보면 `next_qa_values`는 target 망이 출력한 `[B,m]`이다. Double DQN일 때만 online 망의 argmax로 행동을 고른다. 두 경우 모두 target 망의 해당 행동 값을 `gather`로 읽는다. `reward`, `done`, `next_q_values`가 모두 `[B]`인지 먼저 확인한다. 현재 Q 계산은 `no_grad` 밖이어야 optimizer가 작동한다.
+
+```python
+next_qa_values = self.target_critic(next_obs)
+if self.use_double_q:
+    next_action = self.critic(next_obs).argmax(dim=1)
+else:
+    next_action = next_qa_values.argmax(dim=1)
+next_q_values = next_qa_values.gather(1, next_action[:, None])[:, 0]
+```
+
+```python
+def update(self, obs, action, reward, next_obs, done, step):
+    stats = self.update_critic(obs, action, reward, next_obs, done)
+    if step % self.target_update_period == 0:
+        self.update_target_critic()
+    return stats
+```
+
+`get_action`은 `np.random.random() < epsilon`이면 `np.random.randint(self.num_actions)`를, 아니면 `self.critic(observation).argmax(dim=1)`을 선택한다. 스타터는 관측에 이미 `[None]`을 붙이므로 **한 번 더** batch 축을 만들면 `[1,1,d_s]`가 되어 critic 입력과 맞지 않는다. `ptu.to_numpy(action).squeeze(0).item()`으로 끝나는 반환 경로를 고려해 무작위 행동도 1원소 tensor나 배열로 맞추거나, 반환부를 정수 반환으로 함께 고친다.
 
 ## 2. Replay, target 망과 탐색
 

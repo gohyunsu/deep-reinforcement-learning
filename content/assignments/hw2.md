@@ -139,6 +139,49 @@ clip 없이 단순 정책경사 손실을 같은 batch에서 여러 번 최적�
 
 ## 구현 점검표
 
+### 손코딩 지도: 수집 → advantage → 손실
+
+`utils.rollout_trajectory`에서 관측 `ob`로 `policy.get_action`을 호출하고 `env.step`의 다섯 반환값을 푼다. 저장한 `observation[t]`, `action[t]`, `reward[t]`, `next_observation[t]`는 **같은 행동 시점**에 대응해야 한다. `PGAgent.update`에는 궤적별 배열 목록이 들어온다. 먼저 각 궤적에서 Q 추정치를 만든 뒤 관측·행동·보상·종료·Q를 시간축으로 이어 붙인다. 이어 붙인 뒤 반환을 계산하면 서로 다른 episode의 보상이 섞인다.
+
+`_discounted_return`은 한 궤적의 모든 시점에 같은 전체 반환을 복사한다. `_discounted_reward_to_go`는 뒤에서 앞으로 한 번 순회하면 된다. 예를 들어 보상 `[1,2,3]`, $\gamma=0.9$면 reward-to-go는 `[5.23,4.7,3]`이다.
+
+```python
+running = 0.0
+for t in reversed(range(len(rewards))):
+    running = rewards[t] + gamma * running
+    q[t] = running
+```
+
+`ValueCritic.forward`는 `[B, d_s]`에서 `[B]`를 내고, `update`는 Q 목표와의 제곱오차를 줄인다. `PGAgent._estimate_advantage`는 baseline이 없으면 `Q`, 있으면 `Q - V`다. GAE에서는 시점 $t$의 잔차 $\delta_t=r_t+\gamma(1-d_t)V(s_{t+1})-V(s_t)$를 만들고, 뒤에서 `A_t=delta_t+gamma*lambda*(1-d_t)*A_next`로 누적한다. 이 스타터의 `terminals`는 수집 궤적의 **끝**을 표시하므로, 시간 제한에서 계속되는 MDP의 가치를 따로 부트스트랩하려면 다음 상태 가치와 별도 종료 정보가 필요하다.
+
+`MLPPolicy.forward`는 이산 행동에 `Categorical(logits=...)`, 연속 행동에 `Normal(mean, std)`를 반환한다. 연속 행동의 `log_prob`는 `[B,d_a]`이므로 행동 차원을 합쳐 `[B]`로 맞춘다. 기본 PG 손실은 `-(logp * advantage).mean()`이다. `ppo_update`에서는 rollout을 만든 **옛 로그확률을 먼저 고정**하고, 새 로그확률로 `ratio = exp(new_logp - old_logp)`를 계산한다. `min(ratio*A, clip(ratio,1-eps,1+eps)*A)`의 음수를 평균해 최소화한다. PPO의 각 epoch·minibatch에서 `old_logp`를 다시 계산하면 비율이 늘 1에 가까워져 clipping의 의미가 사라진다.
+
+실제 함수에서는 `ptu.from_numpy`가 정수 행동도 float tensor로 바꾼다. 따라서 이산 `Categorical.log_prob`에 넘길 때는 `.long()`으로 되돌리고, 연속 `Normal.log_prob`에서만 행동 차원을 합친다. 두 경우 모두 `logp`, `advantages`, `old_logp`를 `[B]`로 맞춰 곱한다.
+
+```python
+dist = self.forward(obs)                      # obs: [B, d_s]
+logp = dist.log_prob(actions.long() if self.discrete else actions)
+if not self.discrete:
+    logp = logp.sum(dim=-1)                   # [B, d_a] -> [B]
+pg_loss = -(logp * advantages).mean()
+ratio = torch.exp(logp - old_logp)            # PPO, [B]
+clipped = torch.clamp(ratio, 1 - eps, 1 + eps)
+ppo_loss = -torch.minimum(ratio * advantages,
+                          clipped * advantages).mean()
+```
+
+GAE는 flatten한 batch에서도 `terminals[i]`가 episode 끝을 표시하면 뒤에서 계산할 수 있다. `values` 끝에 0을 붙이고 `advantages`를 길이 `B+1`의 0으로 시작한다. 다음을 역순으로 반복한 뒤 마지막 dummy를 버린다.
+
+```python
+mask = 1 - terminals[i]
+delta = rewards[i] + gamma * mask * values[i+1] - values[i]
+advantages[i] = delta + gamma * gae_lambda * mask * advantages[i+1]
+```
+
+같은 마스크가 **다음 가치**와 **다음 advantage** 양쪽에 들어가야 서로 다른 궤적이 섞이지 않는다.
+
+<details><summary>코드의 `terminal`과 환경의 `terminated`가 같은가?</summary><p>이 스타터의 rollout 수집 함수는 실제 종료, 시간 제한, 수동 최대 길이를 모두 `rollout_done`으로 합쳐 궤적을 끊는다. 이는 배열을 분리하는 데 맞지만, MDP의 진짜 종료와 구분한 bootstrap을 구현하려면 원래 종료 사유를 별도로 보관해야 한다.</p></details>
+
 | 구성 | 확인할 항목 | 흔한 오류 |
 | --- | --- | --- |
 | 궤적 수집 | 상태·행동·보상·종료 길이의 정렬 | 마지막 상태를 행동 배열과 같은 길이로 취급 |

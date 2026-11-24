@@ -62,7 +62,7 @@ for (const assignment of assignments) {
       fail('Missing assignment slide link: ' + ref);
   }
 }
-const midtermChapters = manifest.filter(chapter => !chapter.id.startsWith('07-'));
+const midtermChapters = manifest.filter(chapter => Number(chapter.id.slice(0, 2)) < 7);
 if (sets.length !== 3) fail('Expected three midterm sets');
 for (const set of sets) {
   if (set.tf.length !== 25 || set.mc.length !== 4 || set.short.length !== 29)

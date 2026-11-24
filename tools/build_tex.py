@@ -42,7 +42,10 @@ def inline(source: str) -> str:
         elif bold is not None:
             out.append(r"\textbf{" + inline(bold) + "}")
         else:
-            out.append(r"\texttt{" + escape(code) + "}")
+            breakable = (escape(code).replace(r"\_", r"\_\allowbreak{}")
+                         .replace(".", r".\allowbreak{}")
+                         .replace(",", r",\allowbreak{}"))
+            out.append(r"\texttt{" + breakable + "}")
         last = match.end()
     out.append(escape(source[last:]))
     return "".join(out)
@@ -81,6 +84,18 @@ def markdown(source: str, slide_headings: bool = False) -> str:
             if i == len(lines):
                 raise ValueError("Unclosed display formula")
             result.extend([r"\[", *block, r"\]"])
+            i += 1
+            continue
+        if line.startswith("```"):
+            close_list()
+            block = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                block.append(lines[i])
+                i += 1
+            if i == len(lines):
+                raise ValueError("Unclosed code fence")
+            result.extend([r"\begin{verbatim}", *block, r"\end{verbatim}"])
             i += 1
             continue
         details = DETAIL.fullmatch(line)
@@ -161,7 +176,7 @@ def main():
 \vspace{1.3cm}
 {\Large 슬라이드별 학습 가이드\par}
 \vspace{0.8cm}
-{\large 순차 의사결정부터 모델 기반 강화학습까지\par}
+{\large 순차 의사결정부터 계층적 RL과 sim-to-real까지\par}
 \vfill
 {\large 2026년 2학기\par}
 \end{titlepage}

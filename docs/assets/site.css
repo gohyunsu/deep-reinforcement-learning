@@ -148,6 +148,8 @@ details p{padding:13px 2px 15px;font-size:14px;color:#3e5361;margin:0!important}
 .assignment-content h2:first-child{border:0;padding-top:0;margin-top:0}
 .assignment-content h3{font-size:18px;margin:1.6em 0 .65em}
 .assignment-content ul,.assignment-content ol{padding-left:1.5em}
+.assignment-content pre{overflow-x:auto;background:#142432;color:#eef5f6;border-radius:10px;padding:16px 18px;line-height:1.55;font-size:13px;margin:1.1em 0 1.4em}
+.assignment-content pre code{background:none;color:inherit;padding:0;word-break:normal}
 .assignment-related{padding:24px 0 50px;border-top:1px solid var(--line)}
 .assignment-related h2{font-size:20px;letter-spacing:-.03em}
 .assignment-related>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}

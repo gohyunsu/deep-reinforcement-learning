@@ -10,5 +10,13 @@
   {"id":"05-2","file":"DRL_05-2_rl_benchmarks.pdf","title":"강화학습 벤치마크","short":"게임, 시뮬레이션과 로봇 평가","pages":13,"color":"amber"},
   {"id":"06","file":"DRL_06_offline_rl.pdf","title":"Offline RL","short":"분포 이동, 보수적 가치와 IQL","pages":42,"color":"blue"},
   {"id":"07-1","file":"DRL_07-1_mbrl.pdf","title":"Model-based RL의 기초","short":"환경 모델, CEM과 MPC","pages":30,"color":"teal"},
-  {"id":"07-2","file":"DRL_07-2_advanced_mbrl.pdf","title":"Dreamer와 TD-MPC","short":"잠재 세계모델과 가치 기반 계획","pages":40,"color":"amber"}
+  {"id":"07-2","file":"DRL_07-2_advanced_mbrl.pdf","title":"Dreamer와 TD-MPC","short":"잠재 세계모델과 가치 기반 계획","pages":40,"color":"amber"},
+  {"id":"09-1","file":"DRL_09-1_AlphaGo.pdf","title":"AlphaGo와 Monte Carlo Tree Search","short":"탐색, 정책·가치망과 self-play","pages":42,"color":"blue"},
+  {"id":"09-2","file":"DRL_09-2_reward_learning.pdf","title":"보상학습의 출발점","short":"목표 분류, 시연 판별과 선호","pages":35,"color":"teal"},
+  {"id":"10-1","file":"DRL_10-1_reward_learning.pdf","title":"보상학습과 RLHF","short":"보상모델, 선호 최적화와 한계","pages":44,"color":"amber"},
+  {"id":"10-2","file":"DRL_10-2_skill_discovery.pdf","title":"Skill Discovery","short":"내재 보상과 다양한 기술의 발견","pages":40,"color":"blue"},
+  {"id":"12-1","file":"DRL_12-1_hierarchical_rl.pdf","title":"Hierarchical Reinforcement Learning I","short":"시간적 추상화와 options","pages":27,"color":"teal"},
+  {"id":"12-2","file":"DRL_12-2_hierarchical_rl.pdf","title":"Hierarchical Reinforcement Learning II","short":"Skill 연결, prior와 모델 계획","pages":69,"color":"amber"},
+  {"id":"13-1","file":"DRL_13-1_sim2real.pdf","title":"Sim-to-Real I","short":"현실 격차와 domain randomization","pages":31,"color":"blue"},
+  {"id":"13-2","file":"DRL_13-2_sim2real.pdf","title":"Sim-to-Real II","short":"사람 교정, 적응과 로봇 보행","pages":51,"color":"teal"}
 ]

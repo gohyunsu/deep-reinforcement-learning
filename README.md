@@ -2,7 +2,7 @@
 
 [학습 사이트](https://gohyunsu.github.io/deep-reinforcement-learning/)
 
-강화학습의 순차 의사결정부터 모방학습, 정책경사, 가치 기반 방법, 오프라인·모델 기반 강화학습까지 연결하는 한국어 학습 가이드입니다. 12개 장의 409개 슬라이드에 각각 대응하는 이미지와 해설을 함께 배치했습니다. 수식의 전제와 유도, 직관, 구현에서 자주 혼동하는 부분, 실제 연구 사례를 본문에서 설명하며 필요한 곳에 추가 질문을 접어 두었습니다.
+강화학습의 순차 의사결정부터 모방학습, 정책경사, 가치 기반 방법, 오프라인·모델 기반 강화학습, 탐색, 보상학습, skill, 계층적 RL과 sim-to-real까지 연결하는 한국어 학습 가이드입니다. 20개 장의 748개 슬라이드에 각각 대응하는 이미지와 해설을 함께 배치했습니다. 수식의 전제와 유도, 직관, 구현에서 자주 혼동하는 부분, 실제 연구 사례를 본문에서 설명하며 필요한 곳에 추가 질문을 접어 두었습니다.
 
 ## 구성
 
@@ -15,8 +15,12 @@
 | 05-1 · 05-2 | DDPG, TD3, SAC와 벤치마크 |
 | 06 | 오프라인 강화학습 |
 | 07-1 · 07-2 | 환경 모델, MPC, Dreamer, TD-MPC |
+| 09-1 · 09-2 | AlphaGo·MCTS와 보상학습 |
+| 10-1 · 10-2 | RLHF·DPO와 skill discovery |
+| 12-1 · 12-2 | 계층적 RL, skill 연결과 계획 |
+| 13-1 · 13-2 | Sim-to-real, 로봇 조작과 보행 |
 
-[과제 1](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw1.html)은 행동 복제와 DAgger, [과제 2](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw2.html)는 정책경사부터 PPO까지, [과제 3](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw3.html)은 DQN과 Double DQN의 구현과 평가를 다룹니다. 해당 개념을 설명하는 슬라이드 아래에서도 과제 가이드로 이동할 수 있습니다.
+[과제 1](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw1.html)은 BC와 DAgger, [과제 2](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw2.html)는 정책경사와 PPO, [과제 3](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw3.html)은 DQN을 다룹니다. [과제 4](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw4.html)는 SAC, [과제 5](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw5.html)는 CQL, [과제 6](https://gohyunsu.github.io/deep-reinforcement-learning/assignments/hw6.html)는 dynamics model과 MPC로 이어집니다. 각 페이지는 손코딩 함수와 데이터 흐름, 실험 질문을 함께 정리하며 해당 개념의 슬라이드에서도 연결됩니다.
 
 ## 중간고사 연습
 

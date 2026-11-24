@@ -126,12 +126,12 @@ function writeIndex() {
     '<div class="card-arrow">과제 살펴보기 <span>↗</span></div></a>').join('');
   const body = '<main class="home-main"><section class="home-hero"><div class="eyebrow">' + title + '</div>' +
     '<h1>상태와 행동에서<br><em>정책 학습의 직관</em>까지</h1>' +
-    '<p>순차 의사결정의 기초에서 모방학습, 정책경사, 가치학습, 오프라인·모델 기반 강화학습까지. 슬라이드 한 장씩 원리와 수식을 따라가며 실제 연구 사례로 연결한다.</p>' +
+    '<p>순차 의사결정에서 모방학습, 정책경사, 가치학습, 보상학습, 계층적 RL과 실제 로봇 전이까지. 슬라이드 한 장씩 원리와 수식을 따라가며 연구 사례로 연결한다.</p>' +
     '<div class="hero-actions"><a class="primary-button" href="lecture/01-1.html">처음부터 읽기 <span>→</span></a>' +
     '<a class="pdf-link" href="study-guide.pdf" download>PDF 내려받기 ↓</a>' +
     '<span>' + chapters.length + '개 장 · ' + slideCount + '개 슬라이드</span></div><div class="hero-formula">\\[\\pi^*=\\arg\\max_\\pi\\;\\mathbb E_\\pi\\!\\left[\\sum_{t=0}^{\\infty}\\gamma^t r_t\\right]\\]</div></section>' +
     '<section class="learning-path"><div class="section-kicker">학습 경로</div><h2>개념에서 알고리즘으로</h2>' +
-    '<div class="path-line"><span>순차 결정</span><b>→</b><span>모방학습</span><b>→</b><span>정책경사</span><b>→</b><span>가치학습</span><b>→</b><span>오프라인 RL</span><b>→</b><span>Model-based RL</span></div>' +
+    '<div class="path-line"><span>순차 결정</span><b>→</b><span>모방학습</span><b>→</b><span>정책경사</span><b>→</b><span>가치학습</span><b>→</b><span>Model-based RL</span><b>→</b><span>보상학습</span><b>→</b><span>Skill·HRL</span><b>→</b><span>Sim-to-real</span></div>' +
     '<div class="overview-grid">' + chapterCards('') + '</div></section>' +
     '<section class="learning-path midterm-home"><div class="section-kicker">MIDTERM PRACTICE</div><h2>중간고사 연습</h2>' +
     '<p class="midterm-home-intro">Model-based RL 이전의 강의와 HW1·HW2·HW3를 58문항 구성으로 연습한다. 문제를 풀고 해설에서 개념을 다시 확인할 수 있다.</p>' +
@@ -148,7 +148,7 @@ function writeIndex() {
 function writeLecture(chapter, index) {
   const slideList = chapter.slides.map(slide =>
     '<a href="#s' + slide.number + '" data-slide-link="' + slide.number + '"><span>' + slide.number + '</span>' +
-    escapeHtml(slide.title) + '</a>').join('');
+    inlineMath(slide.title) + '</a>').join('');
   const sections = chapter.slides.map(slide => {
     const image = '../assets/slides/' + chapter.id + '/' + slide.number + '.webp';
     const figure = figures[chapter.id + ':' + slide.number];
@@ -160,7 +160,7 @@ function writeLecture(chapter, index) {
         escapeHtml(assignment.title) + ' ↗</a>').join('') + '</div>' : '';
     return '<section class="slide" id="s' + slide.number + '" data-slide="' + slide.number + '">' +
       '<div class="slide-heading"><span class="slide-index">' + chapter.id + ' / ' + slide.number + '</span>' +
-      '<h2>' + escapeHtml(slide.title) + '</h2></div><div class="slide-grid">' +
+      '<h2>' + inlineMath(slide.title) + '</h2></div><div class="slide-grid">' +
       '<figure class="slide-figure"><button type="button" class="slide-image-button" data-zoom-src="' + image +
       '" data-zoom-label="' + escapeHtml(chapter.id + '장 슬라이드 ' + slide.number + ': ' + slide.title) +
       '" aria-label="슬라이드 ' + slide.number + ' 이미지 확대"><img src="' + image + '" alt="' +

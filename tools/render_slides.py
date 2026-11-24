@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -55,9 +56,13 @@ def render_lecture(spec: dict) -> None:
 def main() -> None:
     if not shutil.which("pdftoppm"):
         raise RuntimeError("Poppler pdftoppm is required")
-    for lecture in MANIFEST:
+    requested = set(sys.argv[1:])
+    lectures = [item for item in MANIFEST if not requested or item["id"] in requested]
+    if requested - {item["id"] for item in lectures}:
+        raise ValueError(f"Unknown lecture IDs: {sorted(requested - {item['id'] for item in lectures})}")
+    for lecture in lectures:
         render_lecture(lecture)
-    print(f"Rendered {sum(item['pages'] for item in MANIFEST)} pages", flush=True)
+    print(f"Rendered {sum(item['pages'] for item in lectures)} pages", flush=True)
 
 
 if __name__ == "__main__":

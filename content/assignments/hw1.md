@@ -58,6 +58,50 @@ $I$는 $d_a$차원 항등행렬, $\|\cdot\|_2$는 유클리드 길이, $\log(2\p
 
 <details><summary>훈련 손실이 낮은데 행동이 늘 경계값에 붙는다면?</summary><p>정책 출력의 tanh와 환경의 clip을 중복 적용했거나, 정규화된 전문가 행동과 원래 단위의 정책 출력을 비교했을 수 있다. 평균 행동과 실제 환경에 전달된 행동을 각각 기록하면 어디서 포화되는지 찾을 수 있다.</p></details>
 
+### 손코딩 지도: 시연 한 건이 업데이트되기까지
+
+`utils.rollout_trajectory`는 `reset` 뒤 **현재** 관측으로 행동을 구하고, `step`이 돌려준 다음 관측과 보상을 같은 시점의 전이로 저장한다. `rollout_trajectories`는 한 궤적의 길이가 아니라 모은 전체 단계 수가 `min_timesteps_per_batch` 이상일 때 멈춘다. `replay_buffer.sample_random_data`는 다섯 배열에서 **동일한 무작위 인덱스**를 써야 상태와 행동의 짝이 유지된다.
+
+`pytorch_util.build_mlp`의 층 순서는 입력 차원 → 숨은 층 `n_layers`개 → 행동 차원이다. 연속 행동만 요구되는 `MLPPolicySL.forward`에서는 평균망의 출력과 `exp(logstd)`로 Gaussian을 만들고, `get_action`은 관측을 tensor·batch로 바꾼 뒤 분포에서 표본을 뽑아 NumPy 행동으로 돌려준다. `update`의 핵심은 다음 세 줄로 요약된다. 여기서 `log_prob`의 행동 차원을 합친 뒤 batch 평균을 취한다.
+
+```python
+dist = policy.forward(obs_tensor)          # batch x action_dim
+loss = -dist.log_prob(act_tensor).sum(-1).mean()
+optimizer.zero_grad(); loss.backward(); optimizer.step()
+```
+
+실제 분포 객체가 이미 행동 차원을 묶은 `Independent`라면 `log_prob` 결과가 `[batch]`이므로 다시 `sum(-1)`하지 않는다. `logstd`도 optimizer 매개변수에 포함되어야 한다. `bc_trainer.train_agent`는 버퍼에서 `train_batch_size`개를 뽑아 `BCAgent.train`으로 전달한다. 함수 이름이 비슷한 `batch_size`는 **새 rollout 수집량**, `train_batch_size`는 **한 gradient step의 표본 수**다.
+
+시험에서 함수 본문을 써야 한다면 입력 형식부터 고정한다. 한 관측 `[d_s]`는 `get_action`에서 `[1,d_s]`로 확장하고, 이미 묶인 관측 `[B,d_s]`는 그대로 둔다. 이 과제의 연속 행동 `forward`와 `update`는 다음 형태다. `std`의 `[d_a]`는 `[B,d_a]`인 평균에 broadcasting된다.
+
+```python
+def forward(self, observation):
+    mean = self.mean_net(observation)          # [B, d_a]
+    std = torch.exp(self.logstd)               # [d_a]
+    return distributions.Normal(mean, std)
+
+def update(self, observations, actions):
+    obs = ptu.from_numpy(observations)
+    acs = ptu.from_numpy(actions)
+    loss = -self.forward(obs).log_prob(acs).sum(-1).mean()
+    self.optimizer.zero_grad()
+    loss.backward()
+    self.optimizer.step()
+    return {"Training Loss": ptu.to_numpy(loss)}
+```
+
+`get_action`의 마지막 단계는 다음과 같다. 첫 차원을 제거할지는 호출자가 단일 행동 `[d_a]`를 기대하는지 확인해 결정한다. `torch.no_grad()` 안에서 실행하면 평가 시 불필요한 계산 그래프가 생기지 않는다.
+
+```python
+with torch.no_grad():
+    dist = self.forward(ptu.from_numpy(observation))
+    action = ptu.to_numpy(dist.sample())
+```
+
+`sample_random_data`에서는 인덱스 배열 하나를 먼저 뽑고 `observations[idx]`, `actions[idx]`, `rewards[idx]`, `next_observations[idx]`, `terminals[idx]`에 재사용한다.
+
+DAgger에서는 첫 반복의 전문가 궤적을 읽은 뒤 다음 반복부터 `collect_training_trajectories`가 학습 정책으로 상태를 수집한다. `do_relabel_with_expert`는 궤적의 `observation` 전체를 전문가에게 질의해 `action` 라벨만 교체하고 버퍼에 합친다. 정책이 실행한 행동을 라벨로 남기면 자기 오류를 복제한다. `terminal`은 이 스타터의 **rollout 종료 표시**이므로, 후속 가치학습에서 쓰는 MDP의 실제 종료 마스크와 자동으로 같은 뜻으로 해석하지 않는다.
+
 ## 3. BC 실험과 숫자의 의미
 
 첫 실험은 **Ant-v4**와 **Walker2d-v4·HalfCheetah-v4·Hopper-v4 중 하나**에서 BC 정책을 평가한다. Ant에서는 전문가 성과의 30% 이상이 구현 점검용 목표다. 전문가 반환은 실행 로그의 Initial_DataCollection_AverageReturn에서 확인한다. 보고할 값은 각 정책 rollout 반환의 평균과 표준편차다. $K$번의 episode 반환을 $R_1,\ldots,R_K$라 하면 $\bar R=K^{-1}\sum_kR_k$이고 표본 표준편차는 $\sqrt{\sum_k(R_k-\bar R)^2/(K-1)}$다. 한 episode만 수집해 놓고 표준편차를 보고할 수는 없다.

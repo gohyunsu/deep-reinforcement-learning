@@ -16,7 +16,7 @@ export const sets = [
     id: 'a', title: '세트 A · 개념의 뼈대',
     tf: parse(String.raw`
 01-1:07; 강화학습은 한 행동의 즉시 보상만 최대화하면 충분하다.; F; 현재 행동은 다음 상태를 바꾸므로 미래의 보상까지 함께 고려한다.
-01-2:08@hw1; BC는 전문가가 방문한 상태의 행동을 지도학습으로 맞춘다.; T; BC의 기본 손실은 전문가 상태·행동 쌍에 대한 예측 오차다.
+01-2:08@hw1; HW1의 sample_random_data에서 관측과 행동을 서로 다른 무작위 인덱스로 뽑아도 BC 라벨의 짝은 유지된다.; F; 다섯 버퍼 배열 모두 같은 indices로 인덱싱해야 한 전이가 보존된다.
 01-2:13@hw1; BC의 covariate shift는 학습 때와 실행 때의 상태 분포가 달라지는 현상이다.; T; 작은 행동 오차가 낯선 상태로 이어지고 이후 오차를 증폭할 수 있다.
 01-2:19@hw1; DAgger는 현재 학습 정책이 방문한 상태에 대해 전문가의 행동 라벨을 요청한다.; T; 이 데이터 집계가 실행 분포의 빈틈을 줄인다.
 02-1:20; Markov 성질은 현재 상태를 알고도 과거 전체가 다음 상태 예측에 추가 정보를 준다는 뜻이다.; F; 충분한 상태라면 다음 상태의 조건부 분포는 현재 상태와 행동으로 정해진다.
@@ -24,13 +24,13 @@ export const sets = [
 02-1:35; 관측값이 항상 Markov 상태와 같다고 가정해도 된다.; F; 가려진 속도나 접촉 정보처럼 관측에서 빠진 변수가 미래에 영향을 줄 수 있다.
 02-2:09; 로그미분 항등식은 확률밀도의 기울기를 로그확률 기울기와 확률밀도의 곱으로 바꾼다.; T; ∇p=p∇log p를 이용해 표본 평균으로 기울기를 추정한다.
 02-2:10; 정책경사 유도에는 환경 전이확률의 매개변수 기울기를 반드시 알아야 한다.; F; 환경이 정책 매개변수에 직접 의존하지 않으면 로그 궤적확률의 기울기에서 전이 항은 사라진다.
-03-1:10@hw2; reward-to-go를 쓰면 현재 행동 이전에 발생한 보상이 현재 행동의 gradient 가중치에서 빠진다.; T; 인과적으로 현재 행동은 이미 받은 보상을 바꿀 수 없다.
+03-1:10@hw2; HW2에서 _discounted_reward_to_go의 출력 전 시점을 같은 전체 반환으로 채우면 reward-to-go가 된다.; F; 시점 t의 값은 r[t]부터의 할인합이며 역순 재귀로 계산한다.
 03-1:25@hw2; 상태에만 의존하는 baseline을 정책경사 가중치에서 빼면 기댓값이 바뀐다.; F; 그 항의 기댓값은 상태별로 ∑ₐπ(a|s)∇logπ(a|s)=0이어서 사라진다.
 03-2:09@hw2; GAE에서 λ=0이면 한 단계 TD residual만 남는다.; T; GAE는 δₜ+γλδₜ₊₁+…이므로 λ=0이면 δₜ다.
 03-2:18@hw2; PPO clipping은 모든 갱신에서 정책 변화가 절대적으로 ε 이하임을 보증한다.; F; 목적함수의 이득을 잘라낼 뿐, 전역적 정책 거리의 엄격한 상한은 아니다.
 04-1:09@hw3; Q-learning의 Bellman 최적성 목표는 행동을 낸 behavior policy와 달라도 만들 수 있다.; T; 다음 상태에서 max Q를 사용하므로 off-policy 학습이 가능하다.
 04-1:13@hw3; replay buffer는 연속 전이 간 상관을 약화하고 과거 샘플을 재사용한다.; T; 섞어 뽑은 전이로 업데이트를 안정화하고 표본 효율을 높인다.
-04-1:16@hw3; target network를 현재 Q-network와 매 gradient 단계마다 동일하게 동기화하면 moving target이 충분히 완화된다.; F; 느리게 또는 주기적으로 갱신해야 한동안 목표를 고정할 수 있다.
+04-1:16@hw3; HW3 update_critic에서 target 계산과 현재 Q 계산을 모두 torch.no_grad 안에 두어도 critic은 정상 학습된다.; F; target만 gradient를 끊고 현재 Q는 손실에서 critic 매개변수로 역전파되어야 한다.
 04-1:27@hw3; Double DQN은 온라인 망으로 다음 행동을 고르고 target 망으로 그 행동을 평가한다.; T; 선택과 평가의 잡음 결합을 줄여 max 연산의 과대평가를 완화한다.
 04-1:29; n-step 목표는 한 단계 목표보다 즉시 보상을 더 긴 구간 합산한 뒤 bootstrap한다.; T; 앞의 n개 보상과 n단계 뒤 Q 추정이 결합된다.
 05-1:14; DDPG는 연속 행동의 argmax를 결정적 actor의 출력으로 근사한다.; T; critic의 행동 기울기를 actor로 역전파한다.
@@ -42,16 +42,16 @@ export const sets = [
 06:35; IQL은 학습 중 데이터에 없는 행동에 대한 직접적인 Q 최대화를 피한다.; T; 데이터 행동의 Q와 expectile V를 이용하고 advantage 가중 BC로 정책을 학습한다.
 `, 'tf'),
     mc: parse(String.raw`
-01-2:19@hw1; BC 실행 분포의 상태에서 전문가 라벨을 반복 수집하는 방법은?; REINFORCE ~ DAgger ~ CQL ~ SAC; 1; DAgger는 학습 정책이 방문한 상태를 집계하며 전문가에게 정답 행동을 묻는다.
-03-2:18@hw2; PPO-Clip에서 advantage가 양수이고 확률비 r이 1+ε보다 크면 surrogate 이득은?; 계속 선형 증가 ~ 0으로 고정 ~ 상한에서 더 이상 증가하지 않음 ~ 부호가 반전됨; 2; min(rA, clip(r)A)에서 A>0일 때 r의 상단 이득이 잘린다.
-04-1:27@hw3; Double DQN의 target에 쓰는 조합은?; 온라인 망으로 선택하고 target 망으로 평가 ~ target 망으로 선택하고 온라인 망으로 평가 ~ 두 망의 값을 무조건 평균 ~ actor가 행동 선택; 0; 선택과 평가를 서로 다른 추정으로 분리한다.
+01-2:19@hw1; HW1 do_relabel_with_expert에서 traj의 action에 넣을 값은?; 학습 정책이 원래 실행한 action ~ expert_policy.get_action(traj["observation"]) ~ 이전 traj의 action ~ replay의 reward; 1; 학습 정책이 방문한 관측을 전문가에게 질의해 라벨을 바꾼다.
+03-2:18@hw2; HW2 ppo_update의 ratio 계산으로 맞는 것은?; exp(old_logp-new_logp) ~ exp(new_logp-old_logp) ~ new_logp/old_logp ~ 새 로그확률의 평균; 1; 로그확률 차이를 지수화하며 분모는 데이터를 만든 옛 정책이다.
+04-1:27@hw3; HW3 Double DQN 코드에서 next_action과 next_q를 만드는 조합은?; online.argmax 뒤 target.gather ~ target.argmax 뒤 online.gather ~ online.max만 사용 ~ 두 Q를 평균; 0; 온라인 망은 선택하고 target 망은 그 행동의 값을 읽는다.
 06:35; IQL의 정책 추출 단계에 가장 가까운 것은?; 데이터 밖 모든 행동의 Q를 최대화 ~ advantage 가중 행동복제 ~ 환경 모델을 학습해 계획 ~ ε-greedy 평가; 1; 높은 advantage의 데이터 행동을 더 크게 가중해 복제한다.
 `, 'mc'),
     short: parse(String.raw`
 01-1:06; agent–environment 상호작용의 한 단계를 상태·행동·보상·다음 상태로 적어 보자.; (sₜ, aₜ, rₜ, sₜ₊₁); agent는 sₜ에서 aₜ를 고르고 환경은 rₜ와 sₜ₊₁을 돌려준다.
-01-2:08@hw1; BC의 이산 행동 기본 손실을 적어 보자.; −E_{(s,a)∼D_E}[log πθ(a|s)]; 전문가 데이터 D_E의 행동 로그우도를 최대화하는 지도학습이다.
+01-2:08@hw1; HW1 연속 행동 BC에서 dist.log_prob(actions)의 모양이 [B,d_a]일 때 scalar loss 코드는?; <code>-dist.log_prob(actions).sum(-1).mean()</code>; 행동 축을 합쳐 시연별 로그밀도를 만든 뒤 batch 평균을 취한다.
 01-2:13@hw1; BC에서 작은 단일 단계 오차가 긴 궤적에서 커지는 이유는?; 방문 상태 분포의 이동과 누적 오류; 잘못된 행동이 학습하지 않은 상태를 만들고 그곳의 추가 오류가 다시 상태를 바꾼다.
-01-2:19@hw1; DAgger의 한 반복에서 수집하는 상태는 누구의 정책에서 오는가?; 현재 학습 정책의 실행 상태; 그 상태에 전문가 라벨을 붙여 학습 데이터를 누적한다.
+01-2:19@hw1; HW1의 trajs[i]["action"]을 DAgger에서 갱신할 때 expert에게 넘길 배열 키는?; <code>trajs[i]["observation"]</code>; 실행한 학습 정책의 방문 관측을 전문가가 재라벨링한다.
 02-1:20; Markov 성질을 수식이나 말로 쓰자.; $P(s_{t+1}\mid s_0,a_0,\ldots,s_t,a_t)=P(s_{t+1}\mid s_t,a_t)$; 충분한 현재 상태와 행동을 알면 더 먼 과거가 다음 상태 분포에 필요 없다.
 02-1:25; MDP의 구성요소를 모두 적어 보자.; 상태 S, 행동 A, 전이 P, 보상 R, 할인율 γ, 초기분포 ρ₀; 유한 지평 설정에서는 지평 T도 명시한다.
 02-1:16; 할인 반환 Gₜ를 적어 보자.; $G_t=\sum_{k=0}^{\infty}\gamma^k r_{t+k}$; γ는 먼 미래의 보상에 주는 가중치를 조절한다.
@@ -59,16 +59,16 @@ export const sets = [
 02-2:08; 궤적 확률 pθ(τ)의 인수분해를 적어 보자.; $p_\theta(\tau)=\rho_0(s_0)\prod_t\pi_\theta(a_t\mid s_t)P(s_{t+1}\mid s_t,a_t)$; 정책 항에만 θ가 직접 들어간다는 점이 정책경사 유도의 출발점이다.
 02-2:09; 로그미분 항등식 ∇θpθ(τ)를 적어 보자.; $\nabla_\theta p_\theta(\tau)=p_\theta(\tau)\nabla_\theta\log p_\theta(\tau)$; 양변을 표본 기댓값으로 바꾸면 환경을 미분하지 않고 정책경사를 추정한다.
 02-2:11; REINFORCE의 표본 gradient 형태를 쓰자.; $\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)G(\tau)$; 궤적 반환으로 선택 행동의 로그확률을 가중한다.
-03-1:13@hw2; reward-to-go가 전체 궤적 반환 대신 쓰이는 이유는?; 과거 보상 제거로 분산을 낮추기 위해; 현재 행동과 무관한 과거 보상을 가중치에서 빼도 gradient의 기댓값은 그대로다.
+03-1:13@hw2; HW2 보상 [1,2,3]과 γ=0.9의 _discounted_reward_to_go 출력은?; <code>[5.23, 4.7, 3.0]</code>; 뒤에서 0을 시작해 running = reward[t] + gamma * running을 반복한다.
 03-1:16; Vπ(s)와 Qπ(s,a)의 차이를 설명하자.; V는 상태에서 정책을 따를 때의 기대 반환, Q는 첫 행동 a를 고정한 기대 반환; Vπ(s)=E_{a∼π}[Qπ(s,a)]다.
 03-1:29; Advantage Aπ(s,a)의 정의와 부호 해석은?; Aπ=Qπ−Vπ, 양수면 상태 평균보다 좋은 행동; actor는 양의 advantage 행동 확률을 높이는 방향으로 갱신한다.
 03-2:09@hw2; GAE의 TD residual δₜ를 적어 보자.; $\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)$; V 추정의 한 단계 Bellman 오차다.
 03-2:09@hw2; GAE(γ,λ)를 TD residual의 합으로 적어 보자.; $\hat A_t=\sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}$; λ가 클수록 더 긴 미래 TD 오차가 반영된다.
-03-2:18@hw2; PPO의 확률비 rₜ(θ)를 정의하자.; $r_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$; 수집 정책에 비해 현재 정책이 같은 행동에 부여하는 확률의 비다.
+03-2:18@hw2; HW2 ppo_update에서 새·옛 로그확률로 ratio를 만드는 PyTorch 한 줄은?; <code>ratio = torch.exp(logp - old_logp)</code>; old_logp는 rollout을 만든 정책의 값으로 고정한다.
 04-1:06; Bellman 최적성 식의 Q 버전을 쓰자.; $Q^*(s,a)=\mathbb E[r+\gamma\max_{a'}Q^*(s',a')\mid s,a]$; 다음 행동의 최대 가치를 한 단계 전으로 전파한다.
-04-1:16@hw3; DQN의 target network가 해결하려는 문제는?; 회귀 목표가 온라인 망과 함께 매번 움직이는 문제; θ⁻를 일정 기간 고정해 목표 y=r+γmax Qθ⁻(s′,a′)를 만든다.
+04-1:16@hw3; HW3에서 [B,m] Q와 [B] action으로 실행 행동의 Q를 고르는 PyTorch 식은?; <code>qa.gather(1, action.long()[:, None])[:, 0]</code>; gather의 행동 인덱스는 [B,1]이어야 결과가 [B]가 된다.
 04-1:18@hw3; 이산 행동 ε-greedy의 행동 선택 원칙은?; 확률 ε로 무작위, 나머지로 greedy 행동; 초기 탐색에 큰 ε를 두고 점차 낮추는 것이 일반적이다.
-04-1:27@hw3; DQN과 Double DQN의 다음 상태 target을 각각 적자.; DQN: $r+\gamma\max_a Q_{\rm target}(s',a)$, Double: $r+\gamma Q_{\rm target}(s',\arg\max_a Q_{\rm online}(s',a))$; Double은 행동 선택과 그 행동의 평가를 분리한다.
+04-1:27@hw3; HW3 Double DQN의 next_action을 구하는 망과 next_q를 읽는 망은?; online critic의 argmax와 target critic의 gather; 선택과 평가의 잡음 결합을 줄인다.
 04-1:29; n-step Q 목표의 마지막 bootstrap 시점은?; n단계 후 상태 sₜ₊ₙ; 앞 n개 보상은 실제 관측값으로 합산한다.
 05-1:15; DDPG actor gradient의 연쇄법칙을 적자.; $\nabla_\theta J\approx\mathbb E_s[\nabla_aQ_\phi(s,a)|_{a=\mu_\theta(s)}\nabla_\theta\mu_\theta(s)]$; critic이 행동을 바꾸면 Q가 어떻게 변하는지 actor에 전달한다.
 05-1:21; TD3의 세 안정화 장치를 나열하자.; twin critics, delayed policy update, target policy smoothing; 각각 과대평가, actor의 불안정한 추종, 좁은 Q 봉우리를 다룬다.
@@ -83,8 +83,8 @@ export const sets = [
     id: 'b', title: '세트 B · 수식과 구현',
     tf: parse(String.raw`
 01-1:25; 칩 설계나 로봇 제어는 여러 행동의 연쇄 결과를 평가하는 순차 결정 사례다.; T; 한 단계의 좋은 선택이 전체 과업의 성과를 보장하지 않는다.
-01-2:08@hw1; 연속 행동 BC에는 전문가 행동에 대한 제곱오차를 사용할 수 있다.; T; 가우시안 정책의 고정 분산 로그우도 최대화와도 연결된다.
-01-2:19@hw1; DAgger의 집계 데이터는 첫 전문가 시연만 반복 저장한다.; F; 새 정책이 방문한 상태에 전문가가 붙인 라벨을 계속 추가한다.
+01-2:08@hw1; HW1의 Normal 정책에서 std = torch.exp(self.logstd)는 logstd를 양의 표준편차로 바꾼다.; T; 평균 출력 [B,d_a]와 std [d_a]가 broadcasting된다.
+01-2:19@hw1; HW1 do_relabel_with_expert는 학습 정책의 action 배열을 그대로 전문가 라벨로 저장한다.; F; 학습 정책 방문 observation을 전문가에게 질의해 action을 교체한다.
 01-2:35; diffusion policy는 여러 denoising 단계를 거쳐 행동을 생성한다.; T; 복잡한 다봉 행동 분포를 표현하는 데 유리하지만 추론 계산이 늘어난다.
 02-1:23; MRP에는 보상 구조가 있지만 행동 선택은 없다.; T; MDP가 되면 행동과 행동 조건부 전이가 추가된다.
 02-1:29; 초기 상태 분포 ρ₀를 바꾸어도 같은 정책의 평균 성능은 언제나 동일하다.; F; 시작 상태의 난이도나 도달 가능한 궤적이 달라질 수 있다.
@@ -93,10 +93,10 @@ export const sets = [
 02-2:15; REINFORCE는 수집 정책과 다른 오래된 trajectory를 보정 없이 그대로 써도 정확한 on-policy gradient다.; F; 표본 분포가 바뀌면 기대값이 달라져 importance correction 등이 필요하다.
 03-1:09; score function ∇θlogπθ(a|s)의 행동별 기대값은 0이다.; T; 확률합 1의 기울기가 0이기 때문이다.
 03-1:26; baseline을 빼면 항상 gradient의 분산이 감소한다.; F; 기댓값은 보존되지만 잘못 고른 baseline은 분산을 키울 수도 있다.
-03-2:08@hw2; n-step return은 n개 실제 보상 뒤에 가치 추정으로 bootstrap한다.; T; 짧은 n은 추정 편향, 긴 n은 표본 분산에 영향을 준다.
-03-2:13@hw2; importance ratio의 분모는 데이터를 모은 이전 정책의 행동확률이다.; T; 분자에는 갱신 중인 정책의 확률이 들어간다.
+03-2:08@hw2; HW2 GAE 역순 재귀에서 terminal 마스크는 다음 value와 다음 advantage에 모두 곱해야 궤적 경계를 넘지 않는다.; T; delta와 재귀 항 양쪽에서 1-terminal을 쓴다.
+03-2:13@hw2; HW2 PPO의 old_logp를 매 minibatch 업데이트 뒤 현재 정책으로 다시 계산해도 ratio는 같은 의미다.; F; old_logp는 rollout을 수집한 정책의 고정 로그확률이다.
 04-1:24@hw3; critic이 예측한 Q값이 높아지면 실제 평가 반환도 반드시 높아진다.; F; Q는 학습된 예측이므로 과대평가나 발산이 있으면 실제 성과와 멀어질 수 있다.
-04-1:18@hw3; ε-greedy에서 ε를 0으로 두면 항상 임의 행동을 뽑는다.; F; ε=0이면 greedy 행동만 고른다.
+04-1:18@hw3; HW3 get_action의 관측에 이미 [None] batch 축을 붙였다면 또 붙여도 critic 입력 모양은 같다.; F; 두 번 붙이면 [1,1,d_s]가 되어 일반적인 [B,d_s] 입력과 다르다.
 04-1:27@hw3; 동일 잡음 추정치에서 max를 취하면 추정 오차가 양의 방향으로 선택되기 쉽다.; T; E[max X]≥max E[X]가 과대평가 직관이다.
 04-1:32; PER는 큰 TD 오차 전이를 자주 뽑으며 생기는 sampling bias를 중요도 가중치로 보정할 수 있다.; T; 우선순위 sampling은 균등 replay와 다른 분포다.
 04-1:38; C51은 연속적인 반환 분포를 고정된 지지점 위 확률로 근사한다.; T; Bellman으로 이동한 질량을 지지점으로 투영한다.
@@ -116,8 +116,8 @@ export const sets = [
 `, 'mc'),
     short: parse(String.raw`
 01-1:07; 즉시 보상 최적화와 누적 반환 최적화의 차이를 한 문장으로 설명하자.; 누적 반환은 현재 행동이 미래 상태·보상에 주는 영향까지 본다.; 순차 결정에서는 탐색이나 준비 행동의 즉시 보상이 작아도 미래 성과가 클 수 있다.
-01-2:08@hw1; 고정 분산 가우시안 BC의 평균 행동 예측은 어떤 손실과 연결되는가?; 전문가 행동과 예측 평균 사이의 제곱오차.; 가우시안 음의 로그우도에서 θ에 의존하는 항이 제곱오차다.
-01-2:19@hw1; DAgger에서 전문가에게 라벨을 요청하는 이유는?; 학습 정책이 실제로 방문한 상태의 정답 행동을 얻기 위해.; 전문가 시연에 없는 상태에서도 교정 신호를 만든다.
+01-2:08@hw1; HW1 forward에서 평균망 출력과 학습된 logstd로 Gaussian 분포를 반환하는 핵심 두 줄은?; <code>std = torch.exp(self.logstd)</code>와 <code>return distributions.Normal(self.mean_net(observation), std)</code>; 표준편차는 양수여야 하며 행동 차원에 broadcasting된다.
+01-2:19@hw1; HW1 DAgger의 trajs[i]["action"]에 넣을 전문가 호출 식은?; <code>expert_policy.get_action(trajs[i]["observation"])</code>; 학습 정책이 방문한 관측 전체를 전문가가 재라벨링한다.
 01-2:35; diffusion policy의 생성 절차와 장점 하나를 말하자.; 잡음에서 반복 denoising해 행동을 만들며 다봉 분포를 표현한다.; 한 상태에서 여러 그럴듯한 행동 모드를 모형화하기 좋다.
 02-1:23; Markov chain에 무엇을 더하면 MRP가 되는가?; 보상 함수와 보통 할인율.; 상태 전이만 가진 과정에 누적 보상의 개념을 더한다.
 02-1:25; MRP에 무엇을 더하면 MDP가 되는가?; 행동 선택과 행동 조건부 전이·보상.; 정책이 선택할 수 있는 행동이 생긴다.
@@ -129,12 +129,12 @@ export const sets = [
 03-1:09; E_{a∼π}[∇θlogπθ(a|s)]=0을 한 줄로 보이자.; $\sum_a\pi_\theta(a|s)\nabla_\theta\log\pi_\theta(a|s)=\nabla_\theta\sum_a\pi_\theta(a|s)=0$; 연속 행동에서는 합 대신 적분을 쓴다.
 03-1:25@hw2; 상태 baseline b(s)를 빼도 정책경사 기댓값이 보존되는 핵심 항등식은?; Eₐ[∇θlogπθ(a|s)b(s)]=0.; b(s)가 선택된 행동에 의존하지 않아 확률합의 기울기로 묶인다.
 03-1:30; actor와 critic은 각각 무엇을 학습하는가?; actor는 정책, critic은 가치 또는 advantage 추정.; critic의 피드백이 actor의 업데이트 가중치를 제공한다.
-03-2:08@hw2; n-step return을 식으로 적자.; $G_t^{(n)}=\sum_{k=0}^{n-1}\gamma^k r_{t+k}+\gamma^n V(s_{t+n})$; 관측 보상 n개와 마지막 가치 bootstrap을 결합한다.
-03-2:13@hw2; PPO importance ratio의 분자·분모를 말하자.; 새 정책의 행동확률 / 데이터를 모은 옛 정책의 행동확률.; 같은 (s,a)에 대한 두 정책의 비를 비교한다.
+03-2:08@hw2; HW2 GAE의 delta를 values[i], values[i+1], terminal[i]로 쓰자.; <code>delta = rewards[i] + gamma * (1-terminals[i]) * values[i+1] - values[i]</code>; 궤적 끝에서는 다음 상태 가치가 들어가지 않는다.
+03-2:13@hw2; HW2 PPO에서 새·옛 로그확률과 advantage를 이용한 clipped loss의 핵심 식은?; <code>-torch.minimum(ratio * adv, torch.clamp(ratio, 1-eps, 1+eps) * adv).mean()</code>; ratio는 exp(new_logp-old_logp)이고 두 항의 작은 쪽을 쓴다.
 03-2:17@hw2; PPO에서 advantage가 음수일 때 r이 1−ε보다 작아지면 왜 이득을 잘라내는가?; 나쁜 행동의 확률을 과도하게 줄이는 보상을 막기 위해.; 음의 advantage에서는 확률비 하단에서 surrogate의 개선이 포화된다.
 04-1:13@hw3; DQN replay buffer에서 무작위 minibatch를 쓰는 이유 둘은?; 연속 샘플 상관 완화, 과거 경험 재사용.; 둘은 안정성과 표본 효율에 각각 기여한다.
 04-1:18@hw3; ε-greedy에서 행동이 m개면 greedy 행동의 선택확률은 최소 얼마인가?; 1−ε+ε/m.; 무작위 탐색에서도 그 행동을 1/m 확률로 다시 고를 수 있다.
-04-1:16@hw3; DQN 한 전이의 squared TD loss를 적자.; $\bigl(Q_\theta(s,a)-[r+\gamma(1-d)\max_{a'}Q_{\bar\theta}(s',a')]\bigr)^2$; d는 실제 종료 flag이며 $\bar\theta$는 target network 매개변수다.
+04-1:16@hw3; HW3의 [B,m] target_all에서 [B] next_action의 Q를 [B]로 읽는 PyTorch 식은?; <code>target_all.gather(1, next_action[:, None])[:, 0]</code>; gather 인덱스의 모양은 [B,1]이다.
 04-1:27@hw3; 한 단계만 있는 동등 보상 m개 행동 toy 예제에서 max 추정은 왜 m이 커질수록 위로 치우치는가?; 더 큰 양의 잡음을 가진 행동이 선택될 기회가 늘기 때문이다.; true Q가 모두 같아도 E[max noisy Q]는 보통 0보다 크다.
 04-1:32; PER에서 TD 오차가 큰 전이를 많이 뽑는 목적은?; 학습 신호가 큰 경험에 업데이트를 집중하기 위해.; sampling distribution이 바뀌므로 중요도 가중치도 고려한다.
 05-1:14; DDPG에서 actor μθ(s)의 출력은 확률인가 행동인가?; 결정적 행동.; 탐색 중에는 행동에 외부 잡음을 더할 수 있다.
@@ -150,7 +150,7 @@ export const sets = [
     id: 'c', title: '세트 C · 비교와 응용',
     tf: parse(String.raw`
 01-1:26; 인간 선호 피드백을 이용한 정책 개선은 누적 보상에 기반한 강화학습 응용으로 해석할 수 있다.; T; 선호로부터 만든 보상이나 평가 신호를 정책 개선에 활용한다.
-01-2:13@hw1; 전문가 시연에 오류가 없기만 하면 BC의 실행 상태 분포도 언제나 전문가와 동일하다.; F; 유한 데이터·근사 오차와 작은 초기 실수가 실행 분포를 바꿀 수 있다.
+01-2:13@hw1; HW1 BC update에서 log_prob 결과가 [B,d_a]이면 sum(-1).mean()으로 scalar loss를 만들 수 있다.; T; 먼저 행동 차원을 합치고 나서 batch 평균을 취한다.
 01-2:25; ACT의 action chunking은 매 시점 독립 행동만 예측하는 대신 짧은 행동 묶음을 예측한다.; T; 장기 조작에서 시간적 일관성을 줄 수 있다.
 01-2:35; diffusion policy는 정책이 반드시 하나의 평균 행동만 출력하게 한다.; F; 복잡하고 여러 모드인 행동 분포를 표현할 수 있다.
 02-1:16; 할인율 γ=0이면 반환에는 현재 즉시 보상만 남는다.; T; γ의 양의 거듭제곱이 붙은 미래 항이 모두 0이 된다.
@@ -161,8 +161,8 @@ export const sets = [
 03-1:16; Vπ(s)는 특정 행동 a를 첫 단계에 강제로 선택한 뒤의 기대 반환이다.; F; 그것은 Qπ(s,a)의 정의이고 Vπ(s)는 정책의 행동 평균이다.
 03-1:29; advantage가 0이면 그 행동은 해당 상태에서 정책의 평균 수준이다.; T; Aπ(s,a)=Qπ(s,a)−Vπ(s)다.
 03-2:09@hw2; λ가 커질수록 GAE는 일반적으로 더 긴 시간 범위의 TD residual을 이용한다.; T; bias–variance 절충에서 긴 반환에 가까워진다.
-03-2:18@hw2; PPO는 같은 배치로 여러 최적화 단계를 진행할 때 확률비와 clipping을 쓴다.; T; 옛 정책으로 모은 자료에서 너무 큰 정책 개선 신호를 제한한다.
-04-1:17@hw3; DQN의 탐색은 target network만 있으면 자동으로 충분히 확보된다.; F; 별도의 ε-greedy 같은 행동 선택 탐색이 필요하다.
+03-2:18@hw2; HW2에서 ptu.from_numpy로 변환된 이산 행동을 Categorical.log_prob에 그대로 float로 넣는 편이 안전하다.; F; 이산 행동 인덱스는 long tensor로 변환한다.
+04-1:17@hw3; HW3 update_critic에서 현재 Q 계산을 torch.no_grad 안에 넣으면 critic으로 gradient가 흐르지 않는다.; T; target 계산만 no_grad로 묶는다.
 04-1:27@hw3; Double DQN은 두 추정이 독립일수록 선택 오차와 평가 오차의 결합을 줄이기 쉽다.; T; 완전 독립은 아니더라도 온라인·target 분리가 편향을 줄인다.
 04-1:29; n-step 목표에서 n을 늘리면 bootstrap 비중이 뒤로 밀린다.; T; 더 많은 관측 보상을 직접 합산한다.
 04-1:37; C51의 51은 고정 지지점의 개수를 가리킨다.; T; 반환 분포를 51개 위치의 확률질량으로 나타낸다.
@@ -183,7 +183,7 @@ export const sets = [
 `, 'mc'),
     short: parse(String.raw`
 01-1:29; 로봇 보행을 RL로 모델링할 때 상태·행동·보상의 예를 각각 하나씩 들자.; 상태: 관절 자세, 행동: 모터 명령, 보상: 전진 속도.; 낙상 패널티나 에너지 비용을 더할 수 있다.
-01-2:13@hw1; BC가 학습한 상태 분포와 배포 후 상태 분포가 달라지는 현상의 이름은?; covariate shift 또는 distribution shift.; 작은 정책 오류가 새로운 관측을 유발한다.
+01-2:13@hw1; HW1 sample_random_data에서 observation과 action의 짝을 유지하는 인덱싱 방식은?; <code>idx</code>를 한 번 뽑아 <code>observations[idx]</code>와 <code>actions[idx]</code> 등 모든 배열에 재사용한다.; 배열마다 별도 난수를 뽑으면 한 전이가 깨진다.
 01-2:25; ACT가 단일 행동 대신 예측하는 단위는?; action chunk, 즉 짧은 연속 행동 묶음.; 조작 정책의 시간적 일관성을 높이는 설계다.
 01-2:35; diffusion policy가 단일 평균 예측보다 유리한 행동 분포의 성질은?; 여러 행동 모드가 공존하는 다봉성.; 한 물체를 왼쪽 또는 오른쪽으로 우회하는 행동을 모두 표현할 수 있다.
 02-1:16; γ가 0에 가까울 때와 1에 가까울 때 정책의 시간적 관점은?; 0에 가까우면 즉시 보상, 1에 가까우면 먼 미래도 크게 반영.; γ는 유효 시간 범위와 수렴 조건에도 관련된다.
@@ -197,10 +197,10 @@ export const sets = [
 03-1:29; advantage가 음수인 행동의 log probability는 정책경사 ascent에서 어느 방향으로 변하는가?; 대체로 감소하는 방향.; 평균보다 못한 행동의 선택 가능성을 낮춘다.
 03-1:26; baseline이 unbiased gradient를 보장해도 나쁜 baseline이 불리한 이유는?; gradient 추정 분산을 오히려 늘릴 수 있다.; 불편성과 작은 분산은 별개의 성질이다.
 03-2:09@hw2; λ=0인 GAE와 λ≈1인 GAE의 일반적인 bias–variance 경향은?; λ=0은 짧고 분산이 낮지만 가치함수 편향에 민감, λ≈1은 긴 반환과 높은 분산.; 정확한 경향은 가치함수와 환경에도 의존한다.
-03-2:18@hw2; PPO-Clip 목적에 쓰는 두 후보항을 적자.; rₜ(θ)Âₜ와 clip(rₜ,1−ε,1+ε)Âₜ.; 둘 중 작은 값을 택해 과도한 확률 변화의 이득을 제한한다.
+03-2:18@hw2; HW2 연속 Normal 정책에서 dist.log_prob(actions)가 [B,d_a]일 때 [B] logp를 만드는 코드는?; <code>logp = dist.log_prob(actions).sum(dim=-1)</code>; 행동 차원의 로그밀도를 합쳐 궤적별 확률을 만든다.
 03-2:13@hw2; importance ratio가 1이라는 것은 해당 (s,a)에서 무엇을 뜻하는가?; 새 정책과 수집 정책의 해당 행동확률이 같다.; 전체 정책이 동일하다는 뜻까지는 아니다.
 04-1:16@hw3; DQN에서 온라인 망과 target 망이 맡는 역할을 각각 말하자.; 온라인 망은 학습할 Q, target 망은 TD 목표 계산.; target 망은 느리게 갱신해 목표를 안정화한다.
-04-1:16@hw3; HW3에서 시간 제한에 따른 truncated와 실제 terminated가 TD bootstrap에 주는 차이는?; terminated는 bootstrap을 끄고 truncated는 계속한다.; 둘 다 환경은 reset하지만 시간 제한만으로 MDP의 다음 가치가 0이 되지는 않는다.
+04-1:16@hw3; HW3 run_hw3.py는 truncated 전이를 replay에 넣는가?; 아니요. <code>if not truncated</code> 블록에서만 insert한다.; 저장된 terminated 전이는 done 마스크로 bootstrap을 끄며 시간 제한 전이는 이 runner에서 학습 표본에 없다.
 04-1:27@hw3; Double DQN에서 a*=argmaxₐQonline(s′,a)일 때 target은?; $y=r+\gamma(1-d)Q_{\rm target}(s',a^*)$; 온라인 망이 선택하고 target 망이 평가한다.
 04-1:29; n-step off-policy 목표에서 데이터 수집 정책과 목표 정책이 다르면 어떤 문제가 생기는가?; 중간 n개 행동이 목표 정책과 달라 반환에 off-policy bias가 생길 수 있다.; 중요도 보정이나 제한된 n 같은 설계가 필요하다.
 04-1:38; C51에서 Bellman으로 이동한 반환 질량이 지지점 사이에 놓이면 무엇을 하는가?; 인접한 고정 지지점들로 확률 질량을 투영한다.; 고정 범위와 간격을 유지하며 분포를 학습한다.
