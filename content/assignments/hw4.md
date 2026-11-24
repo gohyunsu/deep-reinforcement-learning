@@ -23,7 +23,11 @@ Target 갱신은 두 방식 중 설정된 하나만 적용한다. Hard 갱신은
 
 ## 3. 엔트로피와 actor 손실
 
-엔트로피는 $\mathcal H(\pi(\cdot\mid s))=\mathbb E_{a\sim\pi}[-\log\pi(a\mid s)]$다. `entropy`는 한 행동 표본으로 $-\log\pi(\hat a\mid s)$를 추정해 **상태마다 하나의 값** `[B]`을 내야 한다. 행동 차원이 여러 개면 각 차원의 로그밀도를 합친다. Actor의 엔트로피를 미분할 때는 `rsample`로 재매개화한 표본을 쓰고, `update_critic`의 target 계산은 `no_grad` 안에서 한다. `use_entropy_bonus`와 `backup_entropy`가 켜진 경우 target의 다음 가치에 $\beta\mathcal H(\pi(\cdot\mid s'))$를 더한다. $\beta$는 보상과 무작위성의 교환비율이다. Pendulum 두 번째 sanity run은 보상 극대화 전의 엔트로피 학습을 확인한다. 행동 구간 $[-1,1]$의 균등분포 엔트로피는 $\log2\approx0.69$다.
+엔트로피는 $\mathcal H(\pi(\cdot\mid s))=\mathbb E_{a\sim\pi}[-\log\pi(a\mid s)]$다. `entropy`는 한 행동 표본으로 $-\log\pi(\hat a\mid s)$를 추정해 **상태마다 하나의 값** `[B]`을 내야 한다. 행동 차원이 여러 개면 각 차원의 로그밀도를 합친다.
+
+Actor의 엔트로피를 미분할 때는 `rsample`로 재매개화한 표본을 쓴다. `update_critic`의 target 계산은 `no_grad` 안에서 한다. `use_entropy_bonus`와 `backup_entropy`가 켜진 경우 target의 다음 가치에 $\beta\mathcal H(\pi(\cdot\mid s'))$를 더한다. $\beta$는 엔트로피 보너스의 가중치다.
+
+Pendulum 두 번째 sanity run은 보상 극대화 전의 엔트로피 학습을 확인한다. 행동 구간 $[-1,1]$의 균등분포 엔트로피는 $\log2\approx0.69$다.
 
 `actor_loss_reinforce`는 상태별로 `num_actor_samples`개 행동을 **sample**하고, critic의 Q를 actor 쪽으로 역전파하지 않은 채 `-mean(log_prob * Q)`를 최소화한다. 표본 수를 늘리면 같은 상태에서의 gradient 잡음을 줄일 수 있지만 critic 평가 비용도 늘어난다. `actor_loss_reparametrize`는 **rsample**로 행동을 만들고 $-\mathbb E[Q_\phi(s,a_\theta)]$를 최소화한다. 이때 Q의 행동 미분이 actor까지 이어져야 하므로 action을 detach하면 안 된다. 두 방식 모두 엔트로피 보너스를 쓰면 actor 손실에서 $\beta\mathcal H$를 뺀다.
 
