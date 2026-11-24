@@ -13,9 +13,9 @@
 <div class="equation">\[Q^*(s,a)=\mathbb E\!\left[r+\gamma\max_{a&#39;}Q^*(s&#39;,a&#39;)\mid s,a\right].\]</div>
 <p>왼쪽은 현재 상태–행동 쌍의 전체 미래 가치, 오른쪽은 즉시 보상과 다음 상태에서 가능한 최선의 가치다. 이것은 정의에서 첫 보상을 분리하고 최적 부분문제를 남긴 식이다. 실제 transition <span class="math-inline">\((s,a,r,s&#39;)\)</span> 하나로는 기대값을 계산하지 못하므로 <span class="math-inline">\(r+\gamma\max_{a&#39;}Q(s&#39;,a&#39;)\)</span>를 <strong>표본 목표</strong>로 사용한다.</p>
 <p>식의 재귀를 수치로 읽어 보자. 현재 보상이 2, 다음 상태의 최대 Q가 5, <span class="math-inline">\(\gamma=0.9\)</span>라면 목표는 <span class="math-inline">\(2+0.9\cdot5=6.5\)</span>다. 종료라면 미래가 없으므로 2만 남는다. 현재 Q가 4라면 6.5 쪽으로 올리는 회귀를 하지만, 5 자체가 틀린 추정이면 그 오류도 함께 전파된다.</p>
-<p>정확한 표 형태 계산에서 이 반복이 수렴하는 이유도 볼 수 있다. <span class="math-inline">\(({\cal T}^*Q)(s,a)=\mathbb E[r+\gamma\max_b Q(s&#39;,b)\mid s,a]\)</span>를 <strong>최적 Bellman 연산자</strong>라 정의하자. <span class="math-inline">\(Q_1,Q_2\)</span>는 비교할 두 행동가치 함수다. <span class="math-inline">\(\|Q_1-Q_2\|_\infty\)</span>는 모든 상태·행동에서의 최대 차이이며, 정확히 <span class="math-inline">\(\max_{s,a}|Q_1(s,a)-Q_2(s,a)|\)</span>다. 최댓값의 차이는 항별 최대 차이를 넘지 못하므로</p>
+<p>정확한 표 형태 계산에서 이 반복이 수렴하는 이유도 볼 수 있다. <span class="math-inline">\(({\cal T}^*Q)(s,a)=\mathbb E[r+\gamma\max_b Q(s&#39;,b)\mid s,a]\)</span>를 <strong>최적 Bellman 연산자</strong>라 정의하자. <span class="math-inline">\(Q_1,Q_2\)</span>는 비교할 두 행동가치 함수다. <span class="math-inline">\(\|Q_1-Q_2\|_\infty\)</span>는 모든 상태·행동에서의 최대 차이이며, 정확히 <span class="math-inline">\(\max_{s,a}|Q_1(s,a)-Q_2(s,a)|\)</span>다. 두 연산 결과의 차이를 <span class="math-inline">\(\Delta(s,a)=|({\cal T}^*Q_1)(s,a)-({\cal T}^*Q_2)(s,a)|\)</span>라 줄여 쓰자. 최댓값의 차이는 항별 최대 차이를 넘지 못하므로</p>
 <div class="equation">\[\begin{aligned}
-|({\cal T}^*Q_1)(s,a)-({\cal T}^*Q_2)(s,a)|
+\Delta(s,a)
 &amp;\le\gamma \mathbb E[|\max_bQ_1(s&#39;,b)-\max_bQ_2(s&#39;,b)|\mid s,a]\\
 &amp;\le\gamma\|Q_1-Q_2\|_\infty.
 \end{aligned}\]</div>

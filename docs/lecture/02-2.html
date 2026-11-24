@@ -60,11 +60,13 @@ R(\tau)\right].\]</div>
 <p>로봇에서 한 rollout에 2분이 걸리면 100개를 모으는 실행 시간만 200분이다. 초기화와 충돌 복구까지 더하면 비용은 커진다. Reward-to-go, baseline, critic은 같은 자료에서 기울기의 불필요한 변동을 줄이려는 장치다.</p>
 </div></div></section><section class="slide" id="s18" data-slide="18"><div class="slide-heading"><span class="slide-index">02-2 / 18</span><h2>표본 수만 늘리기 어려운 이유</h2></div><div class="slide-grid"><figure class="slide-figure"><button type="button" class="slide-image-button" data-zoom-src="../assets/slides/02-2/18.webp" data-zoom-label="02-2장 슬라이드 18: 표본 수만 늘리기 어려운 이유" aria-label="슬라이드 18 이미지 확대"><img src="../assets/slides/02-2/18.webp" alt="02-2장 슬라이드 18: 표본 수만 늘리기 어려운 이유" loading="lazy" decoding="async"><span class="zoom-hint">확대해서 보기 ↗</span></button><figcaption>슬라이드 18</figcaption></figure><div class="explanation"><p>한 업데이트에 더 많은 rollout을 모으면 추정은 안정되지만 로봇 시간과 시뮬레이터 계산이 늘어난다. 하나의 100단계 episode에서 얻은 시점 100개는 같은 초기 상태와 실패 사건을 공유한다. 독립 episode 100개와 정보량이 다르므로 총 환경 단계 수와 독립 시작 횟수를 함께 세어야 한다.</p>
 </div></div></section><section class="slide" id="s19" data-slide="19"><div class="slide-heading"><span class="slide-index">02-2 / 19</span><h2>더 나은 가중치의 계보</h2></div><div class="slide-grid"><figure class="slide-figure"><button type="button" class="slide-image-button" data-zoom-src="../assets/slides/02-2/19.webp" data-zoom-label="02-2장 슬라이드 19: 더 나은 가중치의 계보" aria-label="슬라이드 19 이미지 확대"><img src="../assets/slides/02-2/19.webp" alt="02-2장 슬라이드 19: 더 나은 가중치의 계보" loading="lazy" decoding="async"><span class="zoom-hint">확대해서 보기 ↗</span></button><figcaption>슬라이드 19</figcaption></figure><div class="explanation"><p>이 장의 비할인 설정에서 reward-to-go를 <span class="math-inline">\(G_t=\sum_{k=t}^{T-1}r_k\)</span>라 두자. 정책 <span class="math-inline">\(\pi=\pi_\theta\)</span>를 따를 때의 조건부 기대값 <span class="math-inline">\(Q^\pi(s,a)=\mathbb E_\pi[G_t\mid s_t=s,a_t=a]\)</span>는 행동가치, <span class="math-inline">\(V^\pi(s)=\mathbb E_{a\sim\pi(\cdot\mid s)}Q^\pi(s,a)\)</span>는 상태가치다. 상대적인 장점은 <span class="math-inline">\(A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)\)</span>다. 과거 보상은 현재 행동의 선택에 의존하지 않아 기대 기울기에서 빠진다.</p>
-<div class="equation">\[\nabla_\theta J
-=\mathbb E\!\left[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)
-\,Q^\pi(s_t,a_t)\right]
-=\mathbb E\!\left[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)
-\,A^\pi(s_t,a_t)\right].\]</div>
+<div class="equation">\[\begin{aligned}
+\nabla_\theta J
+&amp;=\mathbb E\!\left[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)
+\,Q^\pi(s_t,a_t)\right]\\
+&amp;=\mathbb E\!\left[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)
+\,A^\pi(s_t,a_t)\right].
+\end{aligned}\]</div>
 <p>두 번째 등식은 행동과 무관한 상태 baseline의 기대 기여가 0이라는 성질을 사용한다. <span class="math-inline">\(Q\)</span>와 <span class="math-inline">\(V\)</span>를 신경망으로 근사하면 분산은 줄 수 있지만 근사 오차가 새로 생긴다.</p>
 <p>baseline 항의 기대 기여는 한 상태에서 직접 보일 수 있다. <span class="math-inline">\(b(s)\)</span>가 행동에 의존하지 않으면 <span class="math-inline">\(\sum_a\pi_\theta(a\mid s)\nabla_\theta\log\pi_\theta(a\mid s)b(s)=b(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0\)</span>이다. 그래서 평균적으로는 기울기를 바꾸지 않으면서, 행동 결과가 그 상태의 보통 성과보다 나았는지 판단하는 기준을 제공한다.</p>
 <p>여기까지의 간결한 식은 이 장에서 정의한 <strong>비할인</strong> 반환 <span class="math-inline">\(R(\tau)=\sum_k r_k\)</span>에 대응한다. 할인 목적 <span class="math-inline">\(J_\gamma=\mathbb E[\sum_k\gamma^k r_k]\)</span>를 그대로 미분한다면 시점 <span class="math-inline">\(t\)</span>의 과거 보상은 인과성으로 빠지고 남는 항은 <span class="math-inline">\(\sum_{k\ge t}\gamma^k r_k=\gamma^tG_t^\gamma\)</span>다. 따라서 <span class="math-inline">\(G_t^\gamma=\sum_{k\ge t}\gamma^{k-t}r_k\)</span>를 쓸 때는 바깥의 <span class="math-inline">\(\gamma^t\)</span>가 필요한 관례가 있다. 할인 목적과 코드의 reward-to-go 정의를 먼저 고정하지 않으면 할인 지수를 한 번 빠뜨리거나 두 번 곱할 수 있다.</p>
