@@ -22,7 +22,7 @@ $$
 \nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.
 $$
 
-현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 **같은 초기 상태 기준 목적** $J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]$에 대한 추정량이다. 두 번째 식에 $\gamma^t$가 있는 이유는 $\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k$이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 $G_t$만 쓴다. $\gamma=1$이면 동일하지만, $\gamma<1$이면 원래 $J$의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.
+현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 **같은 초기 상태 기준 목적** $J(\theta)=\mathbb E[\sum_{t=0}^{T-1}\gamma^t r_t]$에 대한 추정량이다. 두 번째 식에 $\gamma^t$가 있는 이유는 $\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k$이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 $G_t$만 쓴다. $\gamma=1$이면 동일하지만, $\gamma<1$이면 원래 $J$의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.
 
 **이 과제의 할인 reward-to-go 식은 바깥 $\gamma^t$ 없이 $G_t$만 정책 항에 곱한다.** 위의 엄밀한 목적함수 미분과 과제에서 구현하는 추정량을 혼동하지 않도록 구분했다. 실제 코드를 점검할 때는 과제의 시점별 할인 $G_t$와 전체 궤적 반환 계산부터 맞춘다.
 
@@ -63,7 +63,7 @@ $$
 행동에 의존하지 않는 baseline의 기대 기여는
 
 $$
-E_{a\sim\pi_\theta(\cdot\mid s)}
+\mathbb E_{a\sim\pi_\theta(\cdot\mid s)}
 [\nabla_\theta\log\pi_\theta(a\mid s)V_\phi(s)]
 =V_\phi(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0
 $$
@@ -110,11 +110,11 @@ HumanoidStandup에서는 $\lambda=0$, $0.95$, $1$을 같은 환경·네트워크
 
 ## 7. PPO-Clip의 목적함수
 
-수집 때의 정책을 $\pi_{\mathrm{old}}$로 고정하고 현재 정책 $\pi_\theta$와의 행동 확률비를 $\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$라 하자. 이는 보상 $r_t$와 다른 양이다. $\widehat A_t$는 수집한 rollout에서 계산해 고정한 advantage 추정치, $E_t$는 그 rollout의 시점 표본 평균이다. $\epsilon>0$은 허용할 확률비 범위의 반폭이고 $\operatorname{clip}(x,l,u)$는 $x$를 $[l,u]$ 안으로 자른다. PPO-Clip은 다음 surrogate 목적을 최대화한다.
+수집 때의 정책을 $\pi_{\mathrm{old}}$로 고정하고 현재 정책 $\pi_\theta$와의 행동 확률비를 $\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$라 하자. 이는 보상 $r_t$와 다른 양이다. $\widehat A_t$는 수집한 rollout에서 계산해 고정한 advantage 추정치, $\mathbb E_t$는 그 rollout의 시점 표본 평균이다. $\epsilon>0$은 허용할 확률비 범위의 반폭이고 $\operatorname{clip}(x,l,u)$는 $x$를 $[l,u]$ 안으로 자른다. PPO-Clip은 다음 surrogate 목적을 최대화한다.
 
 $$
 L^{\mathrm{clip}}(\theta)
-=E_t\!\left[
+=\mathbb E_t\!\left[
 \min\!\left(
 \rho_t(\theta)\widehat A_t,\,
 \operatorname{clip}(\rho_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t

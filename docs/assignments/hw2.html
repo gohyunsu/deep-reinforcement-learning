@@ -14,7 +14,7 @@
 \widehat g_{\mathrm{rtg}}
 =\frac1N\sum_i\sum_t\gamma^t
 \nabla_\theta\log\pi_\theta(a_t^i\mid s_t^i)G_t^i.\]</div>
-<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 <strong>같은 초기 상태 기준 목적</strong> <span class="math-inline">\(J(\theta)=E[\sum_{t=0}^{T-1}\gamma^t r_t]\)</span>에 대한 추정량이다. 두 번째 식에 <span class="math-inline">\(\gamma^t\)</span>가 있는 이유는 <span class="math-inline">\(\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k\)</span>이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 <span class="math-inline">\(G_t\)</span>만 쓴다. <span class="math-inline">\(\gamma=1\)</span>이면 동일하지만, <span class="math-inline">\(\gamma&lt;1\)</span>이면 원래 <span class="math-inline">\(J\)</span>의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.</p>
+<p>현재 행동은 과거 보상을 바꿀 수 없으므로 reward-to-go는 불필요한 잡음을 덜 포함한다. 위의 두 식은 <strong>같은 초기 상태 기준 목적</strong> <span class="math-inline">\(J(\theta)=\mathbb E[\sum_{t=0}^{T-1}\gamma^t r_t]\)</span>에 대한 추정량이다. 두 번째 식에 <span class="math-inline">\(\gamma^t\)</span>가 있는 이유는 <span class="math-inline">\(\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^k r_k\)</span>이기 때문이다. 일부 구현은 이 바깥 계수를 생략하고 <span class="math-inline">\(G_t\)</span>만 쓴다. <span class="math-inline">\(\gamma=1\)</span>이면 동일하지만, <span class="math-inline">\(\gamma&lt;1\)</span>이면 원래 <span class="math-inline">\(J\)</span>의 정확한 기울기와 달라진다. 스타터 코드의 할인 관례를 확인하고 시간 인덱스를 일치시켜야 한다.</p>
 <p><strong>이 과제의 할인 reward-to-go 식은 바깥 <span class="math-inline">\(\gamma^t\)</span> 없이 <span class="math-inline">\(G_t\)</span>만 정책 항에 곱한다.</strong> 위의 엄밀한 목적함수 미분과 과제에서 구현하는 추정량을 혼동하지 않도록 구분했다. 실제 코드를 점검할 때는 과제의 시점별 할인 <span class="math-inline">\(G_t\)</span>와 전체 궤적 반환 계산부터 맞춘다.</p>
 <p>세 단계의 보상이 <span class="math-inline">\([2,-1,4]\)</span>이고 <span class="math-inline">\(\gamma=1\)</span>이면 전체 반환은 모든 시점에서 5로 쓰이지만 reward-to-go는 차례로 <span class="math-inline">\([5,3,4]\)</span>다. 두 번째 행동에 첫 보상 2를 붙이지 않는 차이가 드러난다. 계산한 배열을 짧은 손계산과 맞춰 본 뒤 긴 rollout에 적용하면 시간 인덱스 오류를 줄일 수 있다.</p>
 <h2>2. CartPole 비교 실험</h2>
@@ -42,7 +42,7 @@
 <h2>3. 상태 가치 baseline</h2>
 <p>파라미터 <span class="math-inline">\(\phi\)</span>인 가치망 <span class="math-inline">\(V_\phi(s_t)\)</span>는 상태 <span class="math-inline">\(s_t\)</span>에서 현재 정책을 계속 따를 때의 기대 미래 반환을 추정한다. 정책 업데이트에는 추정 advantage <span class="math-inline">\(A_t=G_t-V_\phi(s_t)\)</span>를 사용한다. 그 상태에서 평소보다 좋은 결과가 나온 행동은 양의 advantage, 나쁜 결과가 나온 행동은 음의 advantage를 받는다.</p>
 <p>행동에 의존하지 않는 baseline의 기대 기여는</p>
-<div class="equation">\[E_{a\sim\pi_\theta(\cdot\mid s)}
+<div class="equation">\[\mathbb E_{a\sim\pi_\theta(\cdot\mid s)}
 [\nabla_\theta\log\pi_\theta(a\mid s)V_\phi(s)]
 =V_\phi(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0\]</div>
 <p>이므로 정확한 기대 정책경사는 바뀌지 않는다. 식의 <span class="math-inline">\(\sum_a\)</span>는 이산 행동을 가정했으며 연속 행동에서는 행동공간에 대한 적분으로 바꾼다. 두 경우 모두 정책 확률 또는 밀도의 전체 합이 1이라는 정규화 성질을 쓴다. 다만 학습한 가치함수는 근사이고, 실제 구현에서 데이터 재사용·정규화·학습률이 분산과 편향에 영향을 줄 수 있다. 가치함수 손실의 하락과 정책 반환의 상승을 함께 봐야 한다.</p>
@@ -67,9 +67,9 @@
 <details><summary><span class="math-inline">\(\lambda=1\)</span>이면 가치함수를 전혀 쓰지 않나?</summary><p>완전한 episode의 끝까지 모두 관측하고 끝에서 부트스트랩하지 않으면 GAE의 망원합이 Monte Carlo 반환에서 현재 가치 추정치를 뺀 형태가 된다. 궤적이 중간에 잘리면 끝의 가치 추정이 남을 수 있다. 종료 처리까지 함께 봐야 한다.</p></details>
 
 <h2>7. PPO-Clip의 목적함수</h2>
-<p>수집 때의 정책을 <span class="math-inline">\(\pi_{\mathrm{old}}\)</span>로 고정하고 현재 정책 <span class="math-inline">\(\pi_\theta\)</span>와의 행동 확률비를 <span class="math-inline">\(\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)\)</span>라 하자. 이는 보상 <span class="math-inline">\(r_t\)</span>와 다른 양이다. <span class="math-inline">\(\widehat A_t\)</span>는 수집한 rollout에서 계산해 고정한 advantage 추정치, <span class="math-inline">\(E_t\)</span>는 그 rollout의 시점 표본 평균이다. <span class="math-inline">\(\epsilon&gt;0\)</span>은 허용할 확률비 범위의 반폭이고 <span class="math-inline">\(\operatorname{clip}(x,l,u)\)</span>는 <span class="math-inline">\(x\)</span>를 <span class="math-inline">\([l,u]\)</span> 안으로 자른다. PPO-Clip은 다음 surrogate 목적을 최대화한다.</p>
+<p>수집 때의 정책을 <span class="math-inline">\(\pi_{\mathrm{old}}\)</span>로 고정하고 현재 정책 <span class="math-inline">\(\pi_\theta\)</span>와의 행동 확률비를 <span class="math-inline">\(\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)\)</span>라 하자. 이는 보상 <span class="math-inline">\(r_t\)</span>와 다른 양이다. <span class="math-inline">\(\widehat A_t\)</span>는 수집한 rollout에서 계산해 고정한 advantage 추정치, <span class="math-inline">\(\mathbb E_t\)</span>는 그 rollout의 시점 표본 평균이다. <span class="math-inline">\(\epsilon&gt;0\)</span>은 허용할 확률비 범위의 반폭이고 <span class="math-inline">\(\operatorname{clip}(x,l,u)\)</span>는 <span class="math-inline">\(x\)</span>를 <span class="math-inline">\([l,u]\)</span> 안으로 자른다. PPO-Clip은 다음 surrogate 목적을 최대화한다.</p>
 <div class="equation">\[L^{\mathrm{clip}}(\theta)
-=E_t\!\left[
+=\mathbb E_t\!\left[
 \min\!\left(
 \rho_t(\theta)\widehat A_t,\,
 \operatorname{clip}(\rho_t(\theta),1-\epsilon,1+\epsilon)\widehat A_t
